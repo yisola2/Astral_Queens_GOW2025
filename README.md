@@ -126,17 +126,8 @@ The UI system features a comprehensive layout with several key components:
     - Configurable wheel precision (10)
     - Modal background that blocks game interaction while help is visible
 
-- **Interactive Elements**:
-  - Tutorial system with comprehensive game explanation
-  - Status displays for level progress and moves
-  - Interactive controls with proper hover states
-  - Flash animations for user feedback
-  - Grid example with visual representation of solved puzzle
-
 - **Particle Effects**:
-  - Celebration particles when puzzles are solved
-  - Custom particle systems with configurable parameters
-  - High-intensity visual feedback for player achievements
+  - Simple (for now) celebration particles when puzzles are solved
 
 
 ## Development Notes
