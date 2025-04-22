@@ -79,7 +79,7 @@ export class PlayerController {
 
     private async loadCharacterModel(): Promise<void> {
         try {
-            const result = await SceneLoader.ImportMeshAsync("", "/models/", "Aj.glb", this.scene);
+            const result = await SceneLoader.ImportMeshAsync("", "models/", "Aj.glb", this.scene);
             
             if (result.meshes.length > 0) {
                 this.modelMesh = result.meshes[0] as BABYLON.Mesh;

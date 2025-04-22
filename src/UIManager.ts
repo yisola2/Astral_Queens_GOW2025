@@ -497,7 +497,7 @@ export class UIManager {
     // Create a simple grid example with queens
     private createGridExample(container: GUI.Rectangle): void {
         // Use the image from public/images instead of creating a grid programmatically
-        const exampleImage = new GUI.Image("gridExampleImage", "/images/example.png");
+        const exampleImage = new GUI.Image("gridExampleImage", "images/example.png");
         exampleImage.width = "400px";
         exampleImage.height = "250px";
         exampleImage.stretch = GUI.Image.STRETCH_UNIFORM;
