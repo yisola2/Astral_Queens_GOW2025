@@ -1,0 +1,35 @@
+name: Build & Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Pull down your code
+      - uses: actions/checkout@v3
+
+      # 2. Install Node
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3. Install deps
+      - run: npm ci
+
+      # 4. Build for production (outputs into /dist)
+      - run: npm run build
+
+      # 5. (Optional) If you have a custom domain:
+      # - run: echo 'your.domain.com' > dist/CNAME
+
+      # 6. Push /dist to the gh-pages branch
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          # publish_branch: gh-pages  # default
