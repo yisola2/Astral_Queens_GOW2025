@@ -26,19 +26,27 @@ export class InputManager {
         // Setup keyboard input
         scene.onKeyboardObservable.add((kbInfo) => {
             const key = kbInfo.event.key.toLowerCase();
-            const code = kbInfo.event.code.toLowerCase();
+            // Safely get the code, defaulting to the key if code is undefined
+            const code = kbInfo.event.code ? kbInfo.event.code.toLowerCase() : key;
             
             // Store previous state before update
+            // Use key as primary, and code only if different and defined
             this._prevInputMap[key] = this._inputMap[key];
-            this._prevInputMap[code] = this._inputMap[code];
+            if (code !== key && kbInfo.event.code) { 
+                this._prevInputMap[code] = this._inputMap[code];
+            }
             
             // Update current state
             if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
                 this._inputMap[key] = true;
-                this._inputMap[code] = true;
+                if (code !== key && kbInfo.event.code) {
+                    this._inputMap[code] = true;
+                }
             } else if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
                 this._inputMap[key] = false;
-                this._inputMap[code] = false;
+                if (code !== key && kbInfo.event.code) {
+                    this._inputMap[code] = false;
+                }
             }
         });
         
