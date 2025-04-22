@@ -80,9 +80,22 @@ export class Environment {
     }
 
     private createLights(scene: BABYLON.Scene): void {
-        // Simple global light
-        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-        light.intensity = 0.7;
+        // Ambient light (fill light)
+        const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
+        hemiLight.intensity = 0.5; // Lower intensity for ambient light
+
+        // Directional light (main light source for highlights/shadows)
+        const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-0.5, -1, -0.5), scene);
+        dirLight.position = new BABYLON.Vector3(20, 40, 20); // Position the light source
+        dirLight.intensity = 0.8;
+
+        // Optional: Enable shadows (can impact performance)
+        // const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
+        // shadowGenerator.useBlurExponentialShadowMap = true;
+        // shadowGenerator.blurKernel = 32;
+        // You would need to add shadow casters (e.g., player) and receivers (e.g., ground)
+        // Example: shadowGenerator.addShadowCaster(playerMesh);
+        // Example: groundMesh.receiveShadows = true;
     }
 
     private createHubMarker(scene: BABYLON.Scene): void {
