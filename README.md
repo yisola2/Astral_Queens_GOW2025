@@ -44,7 +44,7 @@ Place queens on a grid following these rules:
 1. Clone the repository
    ```bash
    git clone https://github.com/yisola2/Astral_Queens_GOW2025.git
-   cd astral-queens
+   cd Astral_Queens_GOW2025
    ```
 
 2. Install dependencies
