@@ -138,20 +138,11 @@ The UI system features a comprehensive layout with several key components:
   - Custom particle systems with configurable parameters
   - High-intensity visual feedback for player achievements
 
-## Core Game Logic
-
-The game implements a queen placement puzzle system with these components:
-
-- **Grid-based Puzzles**: Each grid has colored regions that must contain exactly one queen
-- **Queen Rules**: Queens attack in rows, columns, and diagonals (chess rules)
-- **Validation**: Real-time validation of queen placements with immediate feedback
-- **Progression**: Five unique altars with increasingly complex puzzles
-- **Marking System**: Ability to mark cells for planning without placing queens
 
 ## Development Notes
 
 - **Havok Physics**: Requires proper WASM file locations (`lib/` directory)
 - **BabylonJS Scene Management**: Uses scene for coordinating all game elements
-- **Animation System**: Custom animation system for character and UI elements
-- **Event System**: Callbacks used to communicate between components
+- **Animation System**: Custom animation system for character
+
 
