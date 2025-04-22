@@ -44,7 +44,7 @@ Place queens on a grid following these rules:
 1. Clone the repository
    ```bash
    git clone https://github.com/yisola2/Astral_Queens_GOW2025.git
-   cd astral-queens
+   cd Astral_Queens_GOW2025
    ```
 
 2. Install dependencies
@@ -73,4 +73,85 @@ Place queens on a grid following these rules:
   - `UIManager.ts`: User interface and feedback
   - `InputManager.ts`: Input handling
   - `types.d.ts`: TypeScript type definitions
+
+## Detailed Components
+
+### Physics System (PlayerController.ts)
+
+The player movement and collision system uses the Havok Physics engine with the following features:
+
+- **Character Controller**: Uses a physics capsule-based character with:
+  - Mass: 1 unit with configured restitution (0.1) and friction (0.8)
+  - Linear damping: 0.5 to prevent sliding
+  - Angular damping: 0.5 to limit rotation
+  - Custom inertia settings for realistic movement
+
+- **Movement System**:
+  - Camera-relative movement: Player moves in the direction the camera is facing
+  - Quaternion-based smooth rotation using SLERP (Spherical Linear Interpolation)
+  - Ground contact detection using ray casting
+  - Walking animation triggered when in motion
+
+- **Character Model**:
+  - 3D character model loaded via BabylonJS SceneLoader
+  - Animation system with idle and walking animations
+  - Model parented to the physics capsule for proper collision handling
+
+### Altar Level 5 (Dark Level)
+
+The fifth and final altar implements a special dark level with unique characteristics:
+
+- **Dynamic Lighting**: 
+  - When activated, it dramatically reduces the global hemisphere light intensity to near zero (0.0001)
+  - Creates a player-attached point light with limited range (5 units)
+  - Light has custom blue-tinted colors (diffuse: 0.7, 0.7, 1.0)
+  - Increases challenge by limiting visibility to player's immediate surroundings
+
+- **Restoration**:
+  - When deactivated, restores normal lighting conditions
+  - Disposes of the player light to return to standard gameplay
+  - Provides a unique gameplay variation that tests spatial awareness
+
+### User Interface (UIManager.ts)
+
+The UI system features a comprehensive layout with several key components:
+
+- **GUI Layout**:
+  - Hierarchical container system with top, bottom, and center areas
+  - Responsive design that scales with window size (requires refinement)
+
+- **Help System with ScrollViewer**:
+  - Detailed help popup with scrollable content
+  - ScrollViewer implementation allowing for extensive content navigation:
+    - Configurable wheel precision (10)
+    - Modal background that blocks game interaction while help is visible
+
+- **Interactive Elements**:
+  - Tutorial system with comprehensive game explanation
+  - Status displays for level progress and moves
+  - Interactive controls with proper hover states
+  - Flash animations for user feedback
+  - Grid example with visual representation of solved puzzle
+
+- **Particle Effects**:
+  - Celebration particles when puzzles are solved
+  - Custom particle systems with configurable parameters
+  - High-intensity visual feedback for player achievements
+
+## Core Game Logic
+
+The game implements a queen placement puzzle system with these components:
+
+- **Grid-based Puzzles**: Each grid has colored regions that must contain exactly one queen
+- **Queen Rules**: Queens attack in rows, columns, and diagonals (chess rules)
+- **Validation**: Real-time validation of queen placements with immediate feedback
+- **Progression**: Five unique altars with increasingly complex puzzles
+- **Marking System**: Ability to mark cells for planning without placing queens
+
+## Development Notes
+
+- **Havok Physics**: Requires proper WASM file locations (`lib/` directory)
+- **BabylonJS Scene Management**: Uses scene for coordinating all game elements
+- **Animation System**: Custom animation system for character and UI elements
+- **Event System**: Callbacks used to communicate between components
 
