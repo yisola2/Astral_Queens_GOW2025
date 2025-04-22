@@ -330,53 +330,102 @@ export class GridManager {
     
     // Place a queen on the cell
     private placeQueen(cell: GridCell): void {
-        // Create queen mesh
-        const queen = BABYLON.MeshBuilder.CreateCylinder(
-            `queen_${cell.row}_${cell.col}`,
-            { height: 0.8, diameterTop: 0.2, diameterBottom: 0.4 },
-            this.scene
-        );
+        // Create a variable to store the queen mesh
+        let queen: BABYLON.AbstractMesh;
         
-        // Position queen on top of the cell
-        queen.position = new BABYLON.Vector3(
-            cell.mesh.position.x,
-            cell.mesh.position.y + (this.cellHeight / 2) + 0.4, // Half the queen height
-            cell.mesh.position.z
-        );
-        queen.parent = this.gridRoot;
-        
-        // Create material for the queen
-        const queenMat = new BABYLON.StandardMaterial(`queen_${cell.row}_${cell.col}_mat`, this.scene);
-        queenMat.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9); // White or off-white
-        queenMat.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-        queen.material = queenMat;
+        // Load the lowpoly_crown model instead of creating a cylinder
+        BABYLON.SceneLoader.ImportMeshAsync("", "models/", "lowpoly_crown.glb", this.scene).then(result => {
+            if (result.meshes.length > 0) {
+                // Get the main mesh from the imported model
+                queen = result.meshes[0];
+                queen.name = `queen_${cell.row}_${cell.col}`;
+                
+                // Position queen on top of the cell
+                queen.position = new BABYLON.Vector3(
+                    cell.mesh.position.x,
+                    cell.mesh.position.y + (this.cellHeight / 2) + 0.2, // Adjust height as needed
+                    cell.mesh.position.z
+                );
+                
+                // Scale the crown to appear larger on the grid
+                queen.scaling = new BABYLON.Vector3(0.35, 0.35, 0.35);
+                
+                // Set parent to gridRoot
+                queen.parent = this.gridRoot;
+                
+                // Add to queens array for tracking
+                this.queens.push(queen as BABYLON.Mesh);
+                
+                // Call the callback when a queen is placed
+                if (this.onQueenPlacedCallback) {
+                    this.onQueenPlacedCallback();
+                }
+                
+                // Check if the puzzle is now solved
+                if (this.isPuzzleSolved() && this.onPuzzleSolvedCallback) {
+                    this.onPuzzleSolvedCallback();
+                }
+            }
+        }).catch(error => {
+            console.error("Failed to load crown model:", error);
+            
+            // Fallback to cylinder if model loading fails
+            const fallbackQueen = BABYLON.MeshBuilder.CreateCylinder(
+                `queen_${cell.row}_${cell.col}`,
+                { height: 0.8, diameterTop: 0.2, diameterBottom: 0.4 },
+                this.scene
+            );
+            
+            // Position queen on top of the cell
+            fallbackQueen.position = new BABYLON.Vector3(
+                cell.mesh.position.x,
+                cell.mesh.position.y + (this.cellHeight / 2) + 0.4, // Half the queen height
+                cell.mesh.position.z
+            );
+            fallbackQueen.parent = this.gridRoot;
+            
+            // Create material for the queen
+            const queenMat = new BABYLON.StandardMaterial(`queen_${cell.row}_${cell.col}_mat`, this.scene);
+            queenMat.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9); // White or off-white
+            queenMat.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+            fallbackQueen.material = queenMat;
+            
+            // Add fallback to queens array
+            queen = fallbackQueen;
+            this.queens.push(fallbackQueen);
+            
+            // Call the callback when a queen is placed
+            if (this.onQueenPlacedCallback) {
+                this.onQueenPlacedCallback();
+            }
+            
+            // Check if the puzzle is now solved
+            if (this.isPuzzleSolved() && this.onPuzzleSolvedCallback) {
+                this.onPuzzleSolvedCallback();
+            }
+        });
         
         // Mark the cell as having a queen
         cell.hasQueen = true;
-        
-        // Add to queens array for tracking
-        this.queens.push(queen);
-        
-        // Call the callback when a queen is placed
-        if (this.onQueenPlacedCallback) {
-            this.onQueenPlacedCallback();
-        }
-        
-        // Check if the puzzle is now solved
-        if (this.isPuzzleSolved() && this.onPuzzleSolvedCallback) {
-            this.onPuzzleSolvedCallback();
-        }
     }
     
     // Remove a queen from the cell
     public removeQueen(cell: GridCell): boolean {
         if (!cell.hasQueen) return false;
         
-        // Find the queen mesh for this cell
+        // Find the queen mesh and its children for this cell
         const queenMeshName = `queen_${cell.row}_${cell.col}`;
         const queen = this.scene.getMeshByName(queenMeshName);
         
         if (queen) {
+            // Get potential child meshes
+            const childMeshes = queen.getChildMeshes();
+            
+            // Dispose of all related meshes
+            for (const mesh of childMeshes) {
+                mesh.dispose();
+            }
+            
             // Remove queen mesh
             queen.dispose();
             
@@ -521,8 +570,15 @@ export class GridManager {
     
     // Reset the grid (remove all queens and marks)
     public resetGrid(): void {
-        // Remove all queens
+        // Remove all queens and their child meshes
         for (const queen of this.queens) {
+            // Get and dispose of child meshes first
+            const childMeshes = queen.getChildMeshes();
+            for (const childMesh of childMeshes) {
+                childMesh.dispose();
+            }
+            
+            // Then dispose of the queen mesh itself
             queen.dispose();
         }
         this.queens = [];
@@ -602,7 +658,31 @@ export class GridManager {
     
     // Dispose of the grid and all its resources
     public dispose(): void {
-        // Dispose of all meshes and materials
+        // Properly dispose of all queen meshes and their children
+        for (const queen of this.queens) {
+            const childMeshes = queen.getChildMeshes();
+            for (const childMesh of childMeshes) {
+                childMesh.dispose();
+            }
+            queen.dispose();
+        }
+        
+        // Dispose of all mark meshes
+        for (const mark of this.markMeshes) {
+            mark.dispose();
+        }
+        
+        // Dispose of all grid meshes
+        for (let row = 0; row < this.cells.length; row++) {
+            for (let col = 0; col < this.cells[row].length; col++) {
+                if (this.cells[row][col]?.mesh) {
+                    this.cells[row][col].mesh.dispose();
+                }
+            }
+        }
+        
+        // Dispose of the grid root node, which will dispose of all child meshes
+        // Use recursive disposal to get all descendants
         this.gridRoot.dispose(false, true);
         
         // Clear arrays
