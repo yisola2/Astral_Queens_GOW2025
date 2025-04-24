@@ -7,6 +7,7 @@ import { Environment } from './Environment';
 import { GridManager } from './GridManager';
 import { AltarManager, AltarConfig } from './AltarManager';
 import { UIManager } from './UIManager';
+import { AudioManager, SoundConfig } from './AudioManager'; // Fixed import path
 import "@babylonjs/loaders";
 import "@babylonjs/inspector";
 
@@ -23,6 +24,7 @@ export class Game {
     private gridManager: GridManager;
     private altarManager: AltarManager;
     private uiManager: UIManager;
+    private audioManager: AudioManager; // Changed from soundManager to audioManager
     
     private isLoading: boolean = true;
     private onInitializedCallback: (() => void) | null = null;
@@ -33,14 +35,21 @@ export class Game {
     private totalMoves: number = 0; // Kept but not actively used
     private currentPuzzleMoves: number = 0; // Kept but not actively used
     
+    private canvas: HTMLCanvasElement;  // Add this property to store the canvas
+    
+    private audioEngine: BABYLON.Engine | null = null;
+    
     constructor(canvas: HTMLCanvasElement, onInitialized?: () => void) {
         console.log("Game constructor: Setting up engine, scene, camera...");
-        this.engine = new BABYLON.Engine(canvas, true);
+        this.engine = new BABYLON.Engine(canvas, true, { audioEngine: true }, true);
         this.scene = new BABYLON.Scene(this.engine);
         this.camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, BABYLON.Vector3.Zero(), this.scene);
         this.camera.attachControl(canvas, true);
         this.camera.lowerRadiusLimit = 5;
         this.camera.upperRadiusLimit = 30;
+
+        // Store canvas for audio engine
+        this.canvas = canvas;
 
         this.onInitializedCallback = onInitialized || null;
         console.log("Game constructor: Calling initialize...");
@@ -50,9 +59,12 @@ export class Game {
     private async initialize(): Promise<void> {
         console.log("Initialize: Setting isLoading = true.");
         this.isLoading = true;
-        // Enable the Inspector
-        if (this.scene) {
-            //this.scene.debugLayer.show(); // This will open the Inspector
+
+        // Initialize audio first
+        try {
+            await this.initializeAudio();
+        } catch (error) {
+            console.error("[Audio] Failed to initialize audio:", error);
         }
 
         // Initialize physics
@@ -76,7 +88,7 @@ export class Game {
         
         // Create the player AFTER the environment is ready
         console.log("Creating player...");
-        this.playerController = new PlayerController(this.scene, this.camera, this.inputManager);
+        this.playerController = new PlayerController(this.scene, this.camera, this.inputManager, this);
         console.log("Player created.");
         
         // Create altar manager with the grid manager
@@ -84,6 +96,9 @@ export class Game {
         
         // Create UI manager
         this.uiManager = new UIManager(this.scene);
+        
+        // Create audio manager
+        this.audioManager = new AudioManager(this.scene); // Changed from soundManager to audioManager
         
         // Set up the managers in player controller
         this.playerController.setGridManager(this.gridManager);
@@ -113,6 +128,111 @@ export class Game {
 
         // Start the game loop
         this.run();
+    }
+
+    private async initializeAudio(): Promise<void> {
+        console.log("[Audio] Starting audio initialization...");
+    
+        try {
+            // Create our own unmute button with a more eye-catching design
+            const unmuteButton = document.createElement('button');
+            unmuteButton.id = 'customUnmuteButton';
+            unmuteButton.innerHTML = '🎵 CLICK HERE TO ENABLE GAME AUDIO 🎵';
+            document.body.appendChild(unmuteButton);
+    
+            // Make the button VERY clearly visible
+            unmuteButton.style.position = 'fixed';
+            unmuteButton.style.top = '20px';
+            unmuteButton.style.left = '50%';
+            unmuteButton.style.transform = 'translateX(-50%)';
+            unmuteButton.style.zIndex = '9999';
+            unmuteButton.style.padding = '15px 25px';
+            unmuteButton.style.backgroundColor = '#ff6600';
+            unmuteButton.style.color = 'white';
+            unmuteButton.style.border = '3px solid yellow';
+            unmuteButton.style.borderRadius = '10px';
+            unmuteButton.style.fontSize = '18px';
+            unmuteButton.style.fontWeight = 'bold';
+            unmuteButton.style.cursor = 'pointer';
+            unmuteButton.style.boxShadow = '0 0 15px rgba(255,255,0,0.7)';
+            unmuteButton.style.animation = 'pulse 2s infinite';
+            
+            // Add a style for the pulsing animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes pulse {
+                    0% { transform: translateX(-50%) scale(1); }
+                    50% { transform: translateX(-50%) scale(1.05); }
+                    100% { transform: translateX(-50%) scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Create the AudioManager instance
+            this.audioManager = new AudioManager(this.scene);
+            
+            // Initialize the AudioManager's audio engine
+            await this.audioManager.initialize();
+
+            // Function to handle audio unlocking and sound loading
+            const initAudio = async () => {
+                try {
+                    console.log("[Audio] User interaction detected, attempting to unlock audio...");
+                    
+                    // Unlock the audio engine
+                    const unlocked = await this.audioManager.unlock();
+                    if (!unlocked) {
+                        console.error("[Audio] Failed to unlock audio engine");
+                        unmuteButton.innerHTML = '❌ Audio Failed - Click to Retry';
+                        return false;
+                    }
+                    
+                    // Now load the game sounds
+                    await this.loadGameSounds();
+                    
+                    // Update button appearance and fade out
+                    unmuteButton.innerHTML = '✅ Audio Enabled!';
+                    setTimeout(() => {
+                        unmuteButton.style.opacity = '0';
+                        setTimeout(() => {
+                            unmuteButton.remove();
+                            style.remove();
+                        }, 1000);
+                    }, 2000);
+                    
+                    return true;
+                } catch (error) {
+                    console.error("[Audio] Error during audio initialization:", error);
+                    unmuteButton.innerHTML = '❌ Audio Failed - Click to Retry';
+                    return false;
+                }
+            };
+            
+            // Add click handler to initialize audio on button click
+            unmuteButton.addEventListener('click', async () => {
+                console.log("[Audio] Unmute button clicked");
+                await initAudio();
+            });
+            
+            // Also try to initialize on any user interaction
+            const initOnInteraction = async () => {
+                const success = await initAudio();
+                if (success) {
+                    document.removeEventListener('click', initOnInteraction);
+                    document.removeEventListener('keydown', initOnInteraction);
+                    document.removeEventListener('touchstart', initOnInteraction);
+                }
+            };
+            
+            document.addEventListener('click', initOnInteraction);
+            document.addEventListener('keydown', initOnInteraction);
+            document.addEventListener('touchstart', initOnInteraction);
+            
+            console.log("[Audio] Audio initialization prepared - waiting for user interaction");
+        } catch (error) {
+            console.error("[Audio] Error setting up audio:", error);
+            throw error;
+        }
     }
 
     private async initializePhysics(): Promise<void> {
@@ -304,5 +424,78 @@ export class Game {
         
         // For MVP, also log to console
         console.error(message);
+    }
+
+    private async loadGameSounds(): Promise<void> {
+        console.log("[Audio] Loading game sounds...");
+        
+        // Define sound configurations with correct paths 
+        // In Vite, the 'public' folder is served at the root
+        const sounds: SoundConfig[] = [
+            {
+                name: 'footstep',
+                path: '/assets/sounds/footstep.wav',
+                isMusic: false,
+                options: {
+                    volume: 0.9,
+                    loop: false
+                }
+            },
+            {
+                name: 'placeQueen',
+                path: '/assets/sounds/placeQueen.wav',
+                isMusic: false,
+                options: {
+                    volume: 0.9,
+                    loop: false
+                }
+            },
+            {
+                name: 'theme',
+                path: '/assets/sounds/theme.mp3',
+                isMusic: true,
+                options: {
+                    volume: 0.7,
+                    loop: true,
+                    autoplay: true
+                }
+            }
+        ];
+        
+        // Load all sounds
+        try {
+            await this.audioManager.loadSounds(sounds);
+            console.log("[Audio] All sounds loaded successfully!");
+            
+            // Start playing background music
+            this.audioManager.playSound('theme');
+        } catch (error) {
+            console.error("[Audio] Error loading sounds:", error);
+        }
+    }
+
+    // Add method to check audio state
+    public isAudioUnlocked(): boolean {
+        return Boolean(BABYLON.Engine.audioEngine?.unlocked);
+    }
+
+    // Simplified playSound method that uses BabylonJS directly
+    public playSound(name: string): void {
+        // Check if audio is available
+        if (!BABYLON.Engine.audioEngine?.unlocked) {
+            console.log(`[Audio] Tried to play '${name}' but audio is locked`);
+            return;
+        }
+
+        if (!this.audioManager) {
+            console.log(`[Audio] Tried to play '${name}' but audioManager is not initialized`);
+            return;
+        }
+
+        try {
+            this.audioManager.playSound(name);
+        } catch (error) {
+            console.error(`[Audio] Error playing sound ${name}:`, error);
+        }
     }
 }

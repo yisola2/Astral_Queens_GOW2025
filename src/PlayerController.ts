@@ -7,6 +7,7 @@ import { GridManager, GridCell } from './GridManager';
 import { AltarManager } from './AltarManager';
 import { UIManager } from './UIManager';
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
+import { Game } from './Game';
 
 export class PlayerController {
     public mesh: BABYLON.Mesh;
@@ -23,6 +24,7 @@ export class PlayerController {
     private gridManager?: GridManager;
     private altarManager?: AltarManager;
     private uiManager?: UIManager;
+    private game: Game;
 
     // Grid interaction state
     private currentCell: GridCell | null = null;
@@ -35,11 +37,14 @@ export class PlayerController {
     private isOnGround: boolean = false;
     private lastMarkTime: number = 0;  // Track last time mark was toggled
     private markCooldown: number = 0.2;  // Cooldown in seconds
+    private lastFootstepTime: number = 0;  // Track last footstep sound
+    private footstepCooldown: number = 0.3;  // Cooldown between footsteps
 
-    constructor(scene: BABYLON.Scene, camera: BABYLON.ArcRotateCamera, inputManager: InputManager) {
+    constructor(scene: BABYLON.Scene, camera: BABYLON.ArcRotateCamera, inputManager: InputManager, game: Game) {
         this.scene = scene;
         this.camera = camera;
         this.inputManager = inputManager;
+        this.game = game;
 
         // Create fallback capsule mesh
         this.mesh = BABYLON.MeshBuilder.CreateCapsule("player", { height: 1.8, radius: 0.4 }, scene);
@@ -189,6 +194,14 @@ export class PlayerController {
             worldDirection = cameraForward.scale(inputDirection.z)
                 .add(cameraRight.scale(inputDirection.x));
             worldDirection.normalize();
+
+            // Play footstep sound if on ground and enough time has passed
+            // Fixed timing logic using current time instead of getDeltaTime()
+            const currentTime = performance.now() / 1000;
+            if (this.isOnGround && currentTime - this.lastFootstepTime > this.footstepCooldown) {
+                this.game.playSound('footstep');
+                this.lastFootstepTime = currentTime;
+            }
         }
 
         // Apply Linear Velocity (preserving vertical momentum)
@@ -316,11 +329,12 @@ export class PlayerController {
 
     // Place a queen on the current cell
     private placeQueen(): void {
-        // Make sure we have a grid manager and are on a cell
-        if (!this.gridManager || !this.currentCell) return;
-        
-        // Try to place a queen and let the GridManager handle validation and feedback
-        this.gridManager.tryPlaceQueen(this.currentCell);
+        if (this.currentCell && this.gridManager) {
+            const success = this.gridManager.tryPlaceQueen(this.currentCell);
+            if (success) {
+                this.game.playSound('placeQueen');
+            }
+        }
     }
 
     // Remove a queen from the current cell
