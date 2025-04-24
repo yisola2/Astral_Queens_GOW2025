@@ -59,7 +59,7 @@ export class Environment {
             result.meshes.forEach(mesh => {
                 // Ensure it's a mesh, not the ground plane we already handled, and has geometry
                 if (mesh instanceof BABYLON.Mesh && mesh !== grassPlane && mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind)) {
-                    console.log(`Adding static collision to mesh: ${mesh.name}`);
+                    //console.log(`Adding static collision to mesh: ${mesh.name}`);
                     try {
                         const body = new PhysicsBody(mesh, PhysicsMotionType.STATIC, false, scene);
                         const shape = new PhysicsShapeMesh(mesh, scene);
