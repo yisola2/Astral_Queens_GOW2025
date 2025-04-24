@@ -14,6 +14,7 @@ Astral Queens is a 3D puzzle game that combines spatial exploration with logical
 - Five unique puzzles with increasing difficulty
 - Interactive altars that reveal puzzles
 - Real-time feedback and validation
+- Immersive audio system
 
 ## Game Objective
 
@@ -38,6 +39,7 @@ Place queens on a grid following these rules:
 - BabylonJS GUI
 - Havok Physics Engine
 - Vite (build tool)
+- Web Audio API (via BabylonJS Audio Engine)
 
 ## Installation
 
@@ -72,9 +74,27 @@ Place queens on a grid following these rules:
   - `AltarManager.ts`: Interactive altar objects
   - `UIManager.ts`: User interface and feedback
   - `InputManager.ts`: Input handling
+  - `AudioManager.ts`: Audio system management
   - `types.d.ts`: TypeScript type definitions
 
 ## Detailed Components
+
+### Audio System (AudioManager.ts)
+
+The game features a comprehensive audio system with the following capabilities:
+
+- **Audio Engine**: Uses BabylonJS Audio Engine with Web Audio API integration
+- **Sound Management**:
+  - Background music with streaming support
+  - Spatial sound effects for footsteps and interactions
+  - Volume control and sound state management
+  - Automatic audio context handling and user interaction unlocking
+
+- **Sound Types**:
+  - Background music (streaming)
+  - Footstep sounds (spatial)
+  - Interaction sounds (spatial)
+  - Puzzle completion sounds
 
 ### Physics System (PlayerController.ts)
 
@@ -129,11 +149,11 @@ The UI system features a comprehensive layout with several key components:
 - **Particle Effects**:
   - Simple (for now) celebration particles when puzzles are solved
 
-
 ## Development Notes
 
 - **Havok Physics**: Requires proper WASM file locations (`lib/` directory)
 - **BabylonJS Scene Management**: Uses scene for coordinating all game elements
 - **Animation System**: Custom animation system for character
+- **Audio System**: Requires BabylonJS engine initialization with `{ audioEngine: true }` option
 
 
