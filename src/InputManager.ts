@@ -98,6 +98,7 @@ export class InputManager {
     public setKeyMapping(action: string, key: string): void {
         switch(action.toLowerCase()) {
             case 'interact':
+                console.log('Audio unlocked?', BABYLON.Engine.audioEngine?.unlocked);
                 this._interactKey = key.toLowerCase();
                 break;
             case 'remove':
