@@ -434,7 +434,7 @@ export class Game {
         const sounds: SoundConfig[] = [
             {
                 name: 'footstep',
-                path: '/assets/sounds/footstep.wav',
+                path: 'assets/sounds/footstep.wav',
                 isMusic: false,
                 options: {
                     volume: 0.9,
@@ -443,7 +443,7 @@ export class Game {
             },
             {
                 name: 'placeQueen',
-                path: '/assets/sounds/placeQueen.wav',
+                path: 'assets/sounds/placeQueen.wav',
                 isMusic: false,
                 options: {
                     volume: 0.9,
@@ -452,7 +452,7 @@ export class Game {
             },
             {
                 name: 'theme',
-                path: '/assets/sounds/theme.mp3',
+                path: 'assets/sounds/theme.mp3',
                 isMusic: true,
                 options: {
                     volume: 0.7,
