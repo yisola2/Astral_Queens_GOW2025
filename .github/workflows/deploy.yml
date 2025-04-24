@@ -24,10 +24,7 @@ jobs:
       # 4. Build for production (outputs into /dist)
       - run: npm run build
 
-      # 5. (Optional) If you have a custom domain:
-      # - run: echo 'your.domain.com' > dist/CNAME
-
-      # 6. Push /dist to the gh-pages branch
+      # 5. Push /dist to the gh-pages branch
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
