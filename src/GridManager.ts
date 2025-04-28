@@ -22,8 +22,8 @@ export class GridManager {
     
     // Grid properties
     private gridSize: number; // e.g., 7 for a 7x7 grid
-    private cellSize: number = 1.0; // Size of each cell
-    private cellHeight: number = 0.6; // Height of the cell platform
+    private cellSize: number = 0.75; // Size of each cell
+    private cellHeight: number = 0.4; // Height of the cell platform
     private cellSpacing: number = 0.05; // Small gap between cells
     private hoveredCell: GridCell | null = null;
     
