@@ -31,8 +31,24 @@ export class AudioManager {
                 return;
             }
             
+            // Set up observers for audio state changes
+            BABYLON.Engine.audioEngine.onAudioUnlockedObservable.add(() => {
+                console.log("[AudioManager] Audio unlocked, setting ready state");
+                this.isAudioReady = true;
+            });
+
+            BABYLON.Engine.audioEngine.onAudioLockedObservable.add(() => {
+                console.log("[AudioManager] Audio locked, clearing ready state");
+                this.isAudioReady = false;
+            });
+
+            // Check if already unlocked
+            if (BABYLON.Engine.audioEngine.unlocked) {
+                console.log("[AudioManager] Audio already unlocked, setting ready state");
+                this.isAudioReady = true;
+            }
+            
             console.log("[AudioManager] Audio initialized");
-            this.isAudioReady = true;
         } catch (error) {
             console.error("[AudioManager] Failed to initialize audio:", error);
             throw error;
@@ -50,6 +66,9 @@ export class AudioManager {
             if (BABYLON.Engine.audioEngine.audioContext?.state === 'suspended') {
                 await BABYLON.Engine.audioEngine.audioContext.resume();
             }
+
+            // Unlock the audio engine
+            BABYLON.Engine.audioEngine.unlock();
 
             console.log("[AudioManager] Audio engine unlocked");
             this.isAudioReady = true;
