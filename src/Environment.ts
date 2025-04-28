@@ -23,10 +23,10 @@ export class Environment {
             
             let result;
             try {
-                result = await SceneLoader.ImportMeshAsync("", "models/", "astral_queen.glb", scene);
+                result = await SceneLoader.ImportMeshAsync("", "models/", "astral_queen_v4.glb", scene);
             } catch (firstError) {
                 console.log("First attempt failed, trying alternative path...");
-                result = await SceneLoader.ImportMeshAsync("", "./models/", "astral_queen.glb", scene);
+                result = await SceneLoader.ImportMeshAsync("", "./models/", "astral_queen_v4.glb", scene);
             }
             
             console.log("Model loaded, meshes:", result.meshes.length);
