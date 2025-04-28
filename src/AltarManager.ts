@@ -63,58 +63,79 @@ export class AltarManager {
             color: config.color || new BABYLON.Color3(0.4, 0.4, 0.6),
             solved: config.solved || false
         });
-        
-        // Create the altar mesh
-        const altar = BABYLON.MeshBuilder.CreateBox(
-            `altar_${id}`,
-            { width: 1, height: 2, depth: 1 },
+
+        // Define a color palette for GlowRings
+        const glowColors = [
+            new BABYLON.Color3(1, 0.2, 0.2), // Red
+            new BABYLON.Color3(0.2, 1, 0.2), // Green
+            new BABYLON.Color3(0.2, 0.4, 1), // Blue
+            new BABYLON.Color3(1, 1, 0.2),   // Yellow
+            new BABYLON.Color3(0.8, 0.2, 1)  // Purple
+        ];
+        // Pick color based on altar index (id is altar_1, altar_2, ...)
+        const altarIndex = parseInt(id.replace('altar_', '')) - 1;
+        const glowColor = glowColors[altarIndex % glowColors.length];
+
+        // Load altar_beta.glb model
+        BABYLON.SceneLoader.ImportMeshAsync(
+            "",
+            "models/",
+            "altar_beta.glb",
             this.scene
-        );
-        
-        // Position and scale
-        altar.position = config.position.clone();
-        altar.scaling = new BABYLON.Vector3(
-            config.scale || 1,
-            config.scale || 1,
-            config.scale || 1
-        );
-        
-        // Add a slight rotation to make it look less uniform
-        altar.rotation = new BABYLON.Vector3(0, Math.PI / 6, 0);
-        
-        // Apply material based on solved state
-        if (config.solved) {
-            altar.material = this.solvedMaterial.clone(`altar_${id}_solvedMat`);
-        } else {
-            altar.material = this.defaultMaterial.clone(`altar_${id}_defaultMat`);
-            if (config.color) {
-                (altar.material as BABYLON.StandardMaterial).diffuseColor = config.color;
+        ).then(result => {
+            const altar = result.meshes[0] as BABYLON.Mesh;
+            altar.name = `altar_${id}`;
+            altar.position = config.position.clone();
+            altar.scaling = new BABYLON.Vector3(
+                config.scale || 1,
+                config.scale || 1,
+                config.scale || 1
+            );
+            altar.rotation = new BABYLON.Vector3(0, Math.PI / 6, 0);
+
+            // Set GlowRing color (clone PBR material and set both albedoColor and emissiveColor)
+            const glowRing = altar.getChildMeshes().find(m => m.name.includes('GlowRing'));
+            if (glowRing && glowRing.material) {
+                glowRing.material = glowRing.material.clone(`altar_${id}_glowMat`);
+                const mat = glowRing.material as BABYLON.PBRMaterial;
+                mat.albedoColor = glowColor;
+                mat.emissiveColor = glowColor;
             }
-        }
-        
-        // Add metadata for interaction
-        altar.metadata = {
-            type: 'altar',
-            id: id,
-            interactionRadius: this.interactionDistance
-        };
-        
-        // Add physics if needed
-        const aggregate = new PhysicsAggregate(
-            altar,
-            PhysicsShapeType.BOX,
-            { mass: 0, friction: 0.5, restitution: 0 },
-            this.scene
-        );
-        
-        // Create text label
-        this.createAltarLabel(id, altar);
-        
-        // Store the altar
-        this.altars.set(id, altar);
-        
-        // Create a subtle particle system for the altar
-        this.createAltarParticles(id, altar, config.solved);
+
+            // Apply material based on solved state (optional, if you want to keep this logic)
+            if (config.solved) {
+                altar.material = this.solvedMaterial.clone(`altar_${id}_solvedMat`);
+            } else {
+                altar.material = this.defaultMaterial.clone(`altar_${id}_defaultMat`);
+                if (config.color) {
+                    (altar.material as BABYLON.StandardMaterial).diffuseColor = config.color;
+                }
+            }
+
+            // Add metadata for interaction
+            altar.metadata = {
+                type: 'altar',
+                id: id,
+                interactionRadius: this.interactionDistance
+            };
+
+            // Add physics if needed
+            const aggregate = new PhysicsAggregate(
+                altar,
+                PhysicsShapeType.BOX,
+                { mass: 0, friction: 0.5, restitution: 0 },
+                this.scene
+            );
+
+            // Create text label
+            this.createAltarLabel(id, altar);
+
+            // Store the altar
+            this.altars.set(id, altar);
+
+            // Create a subtle particle system for the altar
+            this.createAltarParticles(id, altar, config.solved);
+        });
     }
     
     private createAltarParticles(id: string, altar: BABYLON.Mesh, solved: boolean): void {
@@ -286,6 +307,18 @@ export class AltarManager {
             [3, 1, 1, 6, 6],
             [3, 3, 1, 1, 6]
         ]
+        },
+        {
+        id: "altar_6",
+        gridSize: 6,
+        regions: [
+            [0, 0, 1, 1, 1, 1],
+            [0, 0, 1, 2, 2, 1],
+            [3, 3, 1, 2, 2, 1],
+            [3, 4, 4, 4, 1, 1],
+            [3, 4, 5, 5, 5, 7],
+            [3, 3, 5, 6, 6, 7]
+        ]
         }
   
         // More puzzle configurations...
@@ -368,6 +401,36 @@ export class AltarManager {
             this.onAltarActivatedCallback(id);
         }
         
+        // Find the GlowRing child mesh
+        const glowRing = altar.getChildMeshes().find(m => m.name.includes('GlowRing'));
+
+        if (glowRing && glowRing.material) {
+            const mat = glowRing.material as BABYLON.PBRMaterial;
+
+            // Animate the emissiveColor to double its brightness
+            const anim = new BABYLON.Animation(
+                `glowPulse_${id}`,
+                "emissiveColor",
+                60,
+                BABYLON.Animation.ANIMATIONTYPE_COLOR3,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+
+            const original = mat.emissiveColor.clone();
+            const keys = [
+                { frame: 0, value: original },
+                { frame: 20, value: original.scale(2) }
+            ];
+
+            anim.setKeys(keys);
+
+            mat.animations = [];
+            mat.animations.push(anim);
+            this.scene.beginAnimation(mat, 0, 20, false);
+            // Store the original color for reset
+            (glowRing as any)._originalEmissive = original;
+        }
+        
         return true;
     }
     
@@ -412,6 +475,35 @@ export class AltarManager {
         
         // Clear the active altar
         this.activeAltarId = null;
+
+        // Find the GlowRing child mesh
+        const glowRing = altar.getChildMeshes().find(m => m.name.includes('GlowRing'));
+
+        if (glowRing && glowRing.material) {
+            const mat = glowRing.material as BABYLON.PBRMaterial;
+
+            // Animate back to original
+            const anim = new BABYLON.Animation(
+                `glowReset_${this.activeAltarId}`,
+                "emissiveColor",
+                60,
+                BABYLON.Animation.ANIMATIONTYPE_COLOR3,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+
+            const original = (glowRing as any)._originalEmissive || mat.emissiveColor.clone();
+
+            const keys = [
+                { frame: 0, value: mat.emissiveColor.clone() },
+                { frame: 20, value: original }
+            ];
+
+            anim.setKeys(keys);
+
+            mat.animations = [];
+            mat.animations.push(anim);
+            this.scene.beginAnimation(mat, 0, 20, false);
+        }
     }
     
     // Mark an altar as solved
