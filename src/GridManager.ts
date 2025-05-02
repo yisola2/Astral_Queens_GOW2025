@@ -108,15 +108,27 @@ export class GridManager {
     
     
     // Create and materialize the grid in the world
-    public createGrid(position: BABYLON.Vector3, gridSize: number, regionLayout: number[][]): void {
+    public createGrid(position: BABYLON.Vector3, gridSize: number, regionLayout: number[][], platformMeshName?: string): void {
         // Clean up existing grid first
         this.resetGrid();
         
         // Set the new grid size
         this.gridSize = gridSize;
         
-        // Position the grid
-        this.gridRoot.position = position;
+        // Optionally parent to a platform mesh
+        if (platformMeshName) {
+            const platformMesh = this.scene.getMeshByName(platformMeshName);
+            if (platformMesh) {
+                this.gridRoot.parent = platformMesh;
+                this.gridRoot.position = BABYLON.Vector3.Zero(); // Center grid on platform
+            } else {
+                this.gridRoot.parent = null;
+                this.gridRoot.position = position; // fallback to world position
+            }
+        } else {
+            this.gridRoot.parent = null;
+            this.gridRoot.position = position;
+        }
 
         const totalWidth = this.gridSize * (this.cellSize + this.cellSpacing) - this.cellSpacing;
         const offset = totalWidth / 2 - this.cellSize / 2;
