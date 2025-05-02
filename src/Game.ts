@@ -368,39 +368,38 @@ export class Game {
     // Set up the game levels (altars and their associated puzzles)
     private setupLevels(): void {
         // For MVP, we'll create 5 altars in different positions
+        const altarConfigs: AltarConfig[] = [];
         
-        // Define altar positions and their grid spawn positions
-        const altarConfigs: AltarConfig[] = [
-            {
-                position: new BABYLON.Vector3(5, 0, 0),
-                gridPosition: new BABYLON.Vector3(10, 0, 0),
-                color: new BABYLON.Color3(0.8, 0.2, 0.2) // Red
-            },
-            {
-                position: new BABYLON.Vector3(0, 0, 5),
-                gridPosition: new BABYLON.Vector3(0, 0, 10),
-                color: new BABYLON.Color3(0.2, 0.8, 0.2) // Green
-            },
-            {
-                position: new BABYLON.Vector3(-4, 0, 0),
-                gridPosition: new BABYLON.Vector3(-10, 0, 0),
-                color: new BABYLON.Color3(0.2, 0.2, 0.8) // Blue
-            },
-            {
-                position: new BABYLON.Vector3(0, 0, -5),
-                gridPosition: new BABYLON.Vector3(0, 0, -10),
-                color: new BABYLON.Color3(0.8, 0.8, 0.2) // Yellow
-            },
-            {
-                position: new BABYLON.Vector3(5, 0, 5),
-                gridPosition: new BABYLON.Vector3(10, 0, 10), // Closer grid position for dark level
-                color: new BABYLON.Color3(0.8, 0.2, 0.8) // Purple
+        for (let i = 0; i < 5; i++) {
+            const platformMesh = this.scene.getMeshByName(`IslandPlatform_${i + 1}`);
+            let altarPos = new BABYLON.Vector3(0, 0, 0);
+            let gridPos = new BABYLON.Vector3(0, 0, 0);
+            let color: BABYLON.Color3 = new BABYLON.Color3(1, 1, 1);
+            if (platformMesh) {
+                const center = platformMesh.getAbsolutePosition();
+                const bounding = platformMesh.getBoundingInfo().boundingBox;
+                const radius = bounding.extendSizeWorld.length();
+                // Place altar just off the edge in the +Z direction
+                const offset = new BABYLON.Vector3(0, 0, radius + 1.2); // 1.2 units away from edge
+                altarPos = center.add(offset);
+                gridPos = center; // grid will be centered on platform
+                // Assign color as before
+                const colors = [
+                    new BABYLON.Color3(0.8, 0.2, 0.2), // Red
+                    new BABYLON.Color3(0.2, 0.8, 0.2), // Green
+                    new BABYLON.Color3(0.2, 0.2, 0.8), // Blue
+                    new BABYLON.Color3(0.8, 0.8, 0.2), // Yellow
+                    new BABYLON.Color3(0.8, 0.2, 0.8)  // Purple
+                ];
+                color = colors[i % colors.length];
             }
-        ];
-        
-        // Create each altar
-        for (let i = 0; i < altarConfigs.length; i++) {
-            this.altarManager.createAltar(`altar_${i + 1}`, altarConfigs[i]);
+            const config: AltarConfig = {
+                position: altarPos,
+                gridPosition: gridPos,
+                color: color
+            };
+            altarConfigs.push(config);
+            this.altarManager.createAltar(`altar_${i + 1}`, config);
         }
     }
     
@@ -454,6 +453,24 @@ export class Game {
         // Handle window resize
         window.addEventListener('resize', () => {
             this.engine.resize();
+        });
+
+        // Add inspector toggle
+        window.addEventListener('keydown', (evt) => {
+            // Shift+Ctrl+Alt+I or F12
+            if (evt.key === 'F12' || (evt.shiftKey && evt.ctrlKey && evt.altKey && evt.key === 'I')) {
+                if (this.scene.debugLayer.isVisible()) {
+                    this.scene.debugLayer.hide();
+                } else {
+                    this.scene.debugLayer.show({
+                        embedMode: true,
+                        overlay: true,
+                        enablePopup: true,
+                        enableClose: true,
+                        globalRoot: document.body
+                    });
+                }
+            }
         });
     }
     
