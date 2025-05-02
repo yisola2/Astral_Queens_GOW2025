@@ -83,7 +83,16 @@ export class AltarManager {
             "altar_beta.glb",
             this.scene
         ).then(result => {
+            console.log(`Loaded altar model for ${id}, meshes:`, result.meshes.length);
+            
             const altar = result.meshes[0] as BABYLON.Mesh;
+            if (!altar) {
+                console.error(`No mesh found in altar model for ${id}`);
+                return;
+            }
+
+            console.log(`Altar mesh vertices:`, altar.getTotalVertices());
+            
             altar.name = `altar_${id}`;
             altar.position = config.position.clone();
             altar.scaling = new BABYLON.Vector3(
@@ -119,13 +128,43 @@ export class AltarManager {
                 interactionRadius: this.interactionDistance
             };
 
-            // Add physics if needed
-            const aggregate = new PhysicsAggregate(
-                altar,
-                PhysicsShapeType.BOX,
-                { mass: 0, friction: 0.5, restitution: 0 },
-                this.scene
-            );
+            try {
+                // Add physics to the main altar mesh using BOX shape
+                const aggregate = new PhysicsAggregate(
+                    altar,
+                    PhysicsShapeType.BOX,
+                    { 
+                        mass: 0,
+                        friction: 0.5,
+                        restitution: 0.2
+                    },
+                    this.scene
+                );
+
+                // Add physics to child meshes using BOX shape
+                altar.getChildMeshes().forEach(childMesh => {
+                    if (childMesh instanceof BABYLON.Mesh) {
+                        try {
+                            const childAggregate = new PhysicsAggregate(
+                                childMesh,
+                                PhysicsShapeType.BOX,
+                                { 
+                                    mass: 0,
+                                    friction: 0.5,
+                                    restitution: 0.2
+                                },
+                                this.scene
+                            );
+                        } catch (childError) {
+                            console.warn(`Failed to add physics to child mesh ${childMesh.name}:`, childError);
+                        }
+                    }
+                });
+
+                console.log(`Successfully added physics to altar ${id}`);
+            } catch (physicsError) {
+                console.error(`Failed to add physics to altar ${id}:`, physicsError);
+            }
 
             // Create text label
             this.createAltarLabel(id, altar);
@@ -135,6 +174,8 @@ export class AltarManager {
 
             // Create a subtle particle system for the altar
             this.createAltarParticles(id, altar, config.solved);
+        }).catch(error => {
+            console.error(`Failed to load altar model for ${id}:`, error);
         });
     }
     
@@ -385,11 +426,16 @@ export class AltarManager {
             console.error(`No puzzle configuration found for altar ${id}`);
             return false;
         }
-        
+
+        // Map altar index to platform mesh name (altar_1 -> IslandPlatform_1, etc.)
+        const altarIndex = parseInt(id.replace('altar_', ''));
+        const platformMeshName = `IslandPlatform_${altarIndex}`;
+
         this.gridManager.createGrid(
             config.gridPosition,
             puzzleConfig.gridSize,
-            puzzleConfig.regions
+            puzzleConfig.regions,
+            platformMeshName
         );
         this.gridManager.setVisible(true);
         
