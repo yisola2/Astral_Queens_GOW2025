@@ -183,7 +183,10 @@ export class AudioManager {
 
     // Set global volume
     setVolume(volume: number) {
-        this.sounds.forEach(sound => {
+        console.log(`[AudioManager] Setting volume to ${volume}`);
+        console.log(`[AudioManager] Number of loaded sounds: ${this.sounds.size}`);
+        this.sounds.forEach((sound, name) => {
+            console.log(`[AudioManager] Setting volume for sound '${name}'`);
             sound.setVolume(volume);
         });
     }

@@ -9,6 +9,7 @@ import { UIManager } from './UIManager';
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { Game } from './Game';
 
+
 export class PlayerController {
     public mesh: BABYLON.Mesh;
     public body: BABYLON.PhysicsBody;
@@ -25,6 +26,7 @@ export class PlayerController {
     private altarManager?: AltarManager;
     private uiManager?: UIManager;
     private game: Game;
+
 
     // Grid interaction state
     private currentCell: GridCell | null = null;
@@ -149,6 +151,8 @@ export class PlayerController {
         this.uiManager = uiManager;
     }
 
+
+
     // Setup input handlers for actions like placing queens
     private setupActionInputs(): void {
         // Use action manager for more complex interactions
@@ -177,32 +181,30 @@ export class PlayerController {
         const inputDirection = this.inputManager.moveDirection;
         const hasInput = inputDirection.lengthSquared() > 0;
 
-        // Calculate world direction relative to camera
+        // Mouvement RELATIF à la caméra (ArcRotateCamera)
         let worldDirection = BABYLON.Vector3.Zero();
         if (hasInput) {
-            // Get camera's forward direction (where it's looking)
+            // Récupère la direction avant et droite de la caméra
             const cameraForward = this.camera.getDirection(BABYLON.Vector3.Forward());
-            cameraForward.y = 0; // Keep movement on ground plane
-            cameraForward.normalize();
-
-            // Get camera's right direction
+            cameraForward.y = 0; cameraForward.normalize();
             const cameraRight = this.camera.getDirection(BABYLON.Vector3.Right());
-            cameraRight.y = 0;
-            cameraRight.normalize();
+            cameraRight.y = 0; cameraRight.normalize();
 
-            // Combine forward and right vectors based on input
+            // Combine input avec orientation caméra
             worldDirection = cameraForward.scale(inputDirection.z)
                 .add(cameraRight.scale(inputDirection.x));
             worldDirection.normalize();
 
             // Play footstep sound if on ground and enough time has passed
-            // Fixed timing logic using current time instead of getDeltaTime()
             const currentTime = performance.now() / 1000;
             if (this.isOnGround && currentTime - this.lastFootstepTime > this.footstepCooldown) {
                 this.game.playSound('footstep');
                 this.lastFootstepTime = currentTime;
             }
         }
+
+        // Met à jour la cible de la caméra d'exploration (pour garder le joueur centré)
+        this.camera.setTarget(this.mesh.position);
 
         // Apply Linear Velocity (preserving vertical momentum)
         const currentVelocity = this.body.getLinearVelocity();
@@ -262,15 +264,25 @@ export class PlayerController {
         // Check which cell the player is on
         const cell = this.gridManager.getCellAtPosition(playerPosition);
         
-        // If cell changed, update highlight
+        // If cell changed, update highlight and interaction prompt
         if (cell !== this.currentCell) {
             // Clear current cell if we're moving off the grid
             if (this.currentCell && !cell) {
                 this.currentCell = null;
                 this.gridManager.highlightCell(null);
+                this.hideInteractionPrompt();
             } else {
                 this.gridManager.highlightCell(cell);
                 this.currentCell = cell;
+                
+                // Show appropriate interaction prompt
+                if (cell) {
+                    if (cell.hasQueen) {
+                        this.showInteractionPrompt(`Press [R] to remove queen`);
+                    } else {
+                        this.showInteractionPrompt(`Press [E] to place queen`);
+                    }
+                }
             }
         }
 
@@ -279,11 +291,15 @@ export class PlayerController {
 
         // Check for mark toggle input with cooldown
         const currentTime = performance.now() / 1000;  // Convert to seconds
-        if (this.inputManager.isKeyDown('m') && 
+        if (this.inputManager.markPressed && 
             this.currentCell && 
             currentTime - this.lastMarkTime >= this.markCooldown) {
-            this.gridManager.toggleMark(this.currentCell);
-            this.lastMarkTime = currentTime;
+            // Show mark/unmark prompt
+            if (this.currentCell.marked) {
+                this.showInteractionPrompt(`Press [SPACE] to unmark cell`);
+            } else {
+                this.showInteractionPrompt(`Press [SPACE] to mark cell`);
+            }
         }
     }
     
@@ -303,7 +319,7 @@ export class PlayerController {
             this.nearbyAltarId = nearbyAltarId;
             
             if (nearbyAltarId) {
-                this.showInteractionPrompt(`Press E to interact with altar`);
+                this.showInteractionPrompt(`Press [E] to activate altar`);
             } else {
                 this.hideInteractionPrompt();
             }
@@ -314,6 +330,11 @@ export class PlayerController {
     private handleInteractionKey(): void {
         // If on a grid cell and the player can place a queen
         if (this.currentCell && this.gridManager) {
+            if (this.currentCell.hasQueen) {
+                this.showInteractionPrompt(`Press [R] to remove queen`);
+            } else {
+                this.showInteractionPrompt(`Press [E] to place queen`);
+            }
             this.placeQueen();
             return;
         }
@@ -330,10 +351,7 @@ export class PlayerController {
     // Place a queen on the current cell
     private placeQueen(): void {
         if (this.currentCell && this.gridManager) {
-            const success = this.gridManager.tryPlaceQueen(this.currentCell);
-            if (success) {
-                this.game.playSound('placeQueen');
-            }
+            this.gridManager.tryPlaceQueen(this.currentCell);
         }
     }
 

@@ -1,9 +1,11 @@
 import * as BABYLON from '@babylonjs/core';
 import * as GUI from '@babylonjs/gui';
+import { AudioManager } from './AudioManager';
 
 export class UIManager {
     private scene: BABYLON.Scene;
     private advancedTexture: GUI.AdvancedDynamicTexture;
+    private audioManager: AudioManager | null = null;
     
     // Core UI containers for organization
     private topContainer: GUI.StackPanel;
@@ -19,6 +21,8 @@ export class UIManager {
     private feedbackText: GUI.TextBlock;
     private puzzleInfo: GUI.TextBlock;
     private helpButton: GUI.Button;
+    private muteButton: GUI.Button;
+    private isMuted: boolean = false;
     
     // Popup elements
     private popupContainer: GUI.Rectangle;
@@ -32,9 +36,15 @@ export class UIManager {
     private helpPopupCloseButton: GUI.Button;
     private helpPopupModalBackground: GUI.Rectangle;
     
-    constructor(scene: BABYLON.Scene) {
+    // Interaction prompt container
+    private interactionPromptContainer: GUI.Rectangle | null;
+    
+    private topRightPanel: GUI.StackPanel;
+    
+    constructor(scene: BABYLON.Scene, audioManager?: AudioManager) {
         this.scene = scene;
         this.advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("gameUI");
+        if (audioManager) this.audioManager = audioManager;
         
         // Setup UI containers and elements
         this.setupContainers();
@@ -124,7 +134,7 @@ export class UIManager {
         
         // Controls Info (bottom-left)
         this.controlsInfo = new GUI.TextBlock("controlsInfo");
-        this.controlsInfo.text = "WASD: Move\nE: Interact\nR: Remove Queen\nM: Mark Cell\nH: Help";
+        this.controlsInfo.text = "WASD: Move\nE: Interact\nR: Remove Queen\nSPACE: Mark Cell\nH: Help";
         this.controlsInfo.color = "white";
         this.controlsInfo.fontSize = 18;
         this.bottomContainer.addControl(this.controlsInfo);
@@ -133,8 +143,11 @@ export class UIManager {
         this.interactionPrompt = new GUI.TextBlock("interactionPrompt");
         this.interactionPrompt.text = "";
         this.interactionPrompt.color = "white";
-        this.interactionPrompt.fontSize = 24;
-        this.interactionPrompt.height = "40px";
+        this.interactionPrompt.fontSize = 28;
+        this.interactionPrompt.height = "50px";
+        this.interactionPrompt.fontWeight = "bold";
+        this.interactionPrompt.outlineWidth = 1;
+        this.interactionPrompt.outlineColor = "black";
         this.centerContainer.addControl(this.interactionPrompt);
         
         // Feedback Text (below interaction prompt)
@@ -478,7 +491,7 @@ export class UIManager {
         controlsContainer.addControl(controlsText3, 2, 0);
         
         const controlsText4 = new GUI.TextBlock("controlsText4");
-        controlsText4.text = "• Press M to mark/unmark a cell for planning";
+        controlsText4.text = "• Press SPACE to mark/unmark a cell for planning";
         controlsText4.color = "white";
         controlsText4.fontSize = 18;
         controlsText4.textWrapping = true;
@@ -531,11 +544,13 @@ export class UIManager {
     // Show interaction prompt (e.g., "Press E to interact")
     public showInteractionPrompt(text: string): void {
         this.interactionPrompt.text = text;
+        this.interactionPrompt.isVisible = true;
     }
     
     // Hide interaction prompt
     public hideInteractionPrompt(): void {
         this.interactionPrompt.text = "";
+        this.interactionPrompt.isVisible = false;
     }
     
     // Show feedback message with optional auto-hide
@@ -634,5 +649,10 @@ export class UIManager {
         };
         
         flash();
+    }
+    
+    public setMuted(isMuted: boolean): void {
+        this.isMuted = isMuted;
+        if (this.audioManager) this.audioManager.setVolume(isMuted ? 0 : 1);
     }
 } 

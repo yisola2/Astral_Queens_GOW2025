@@ -109,6 +109,7 @@ export class GridManager {
     
     // Create and materialize the grid in the world
     public createGrid(position: BABYLON.Vector3, gridSize: number, regionLayout: number[][], platformMeshName?: string): void {
+        console.log('[GridManager] createGrid called', { position, gridSize, regionLayout, platformMeshName });
         // Clean up existing grid first
         this.resetGrid();
         
@@ -150,6 +151,7 @@ export class GridManager {
     }
     
     private createCell(row: number, col: number, regionId: number, offset: number): GridCell {
+        console.log(`[GridManager] createCell called for row: ${row}, col: ${col}`);
         // Calculate position
         const x = (col * (this.cellSize + this.cellSpacing)) - offset;
         const z = (row * (this.cellSize + this.cellSpacing)) - offset;
@@ -160,9 +162,9 @@ export class GridManager {
         const cellMesh = BABYLON.MeshBuilder.CreateBox(
             cellName,
             { 
-                width: this.cellSize, 
+                width: this.cellSize, // Restore original size
                 height: this.cellHeight, 
-                depth: this.cellSize 
+                depth: this.cellSize // Restore original size
             },
             this.scene
         );
@@ -171,6 +173,11 @@ export class GridManager {
         cellMesh.position = position;
         cellMesh.position.y = this.cellHeight / 2; // Center vertically
         cellMesh.parent = this.gridRoot;
+        
+        // Force material for debugging
+        const debugMaterial = new BABYLON.StandardMaterial(`${cellName}_debug_mat`, this.scene);
+        debugMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0); // Bright green, unlit
+        cellMesh.material = debugMaterial;
         
         // Create material based on region
         const cellMat = new BABYLON.StandardMaterial(`${cellName}_mat`, this.scene);
@@ -626,30 +633,37 @@ export class GridManager {
 
         // Update visual representation
         if (cell.marked) {
-            // Create X mark
+            // Create X mark with thicker lines
             const xMark = BABYLON.MeshBuilder.CreateLines(
                 `xMark_${cell.row}_${cell.col}`,
                 {
                     points: [
-                        new BABYLON.Vector3(-0.3, 0.1, -0.3),
-                        new BABYLON.Vector3(0.3, 0.1, 0.3),
-                        new BABYLON.Vector3(0.3, 0.1, -0.3),
-                        new BABYLON.Vector3(-0.3, 0.1, 0.3)
-                    ]
+                        new BABYLON.Vector3(-0.3, 0.01, -0.3),  // Reduced y offset
+                        new BABYLON.Vector3(0.3, 0.01, 0.3),
+                        new BABYLON.Vector3(0.3, 0.01, -0.3),
+                        new BABYLON.Vector3(-0.3, 0.01, 0.3)
+                    ],
+                    updatable: false,
+                    instance: null
                 },
                 this.scene
             );
 
             // Position and parent the X mark
             xMark.position = cell.mesh.position.clone();
-            xMark.position.y += this.cellHeight / 2 + 0.01; // Slightly above the cell
+            xMark.position.y += this.cellHeight / 2 + 0.01; // Reduced offset to be closer to cell
             xMark.parent = this.gridRoot;
 
-            // Create material for X mark
+            // Create material for X mark with thicker lines
             const xMarkMat = new BABYLON.StandardMaterial(`xMark_${cell.row}_${cell.col}_mat`, this.scene);
             xMarkMat.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red
             xMarkMat.emissiveColor = new BABYLON.Color3(1, 0, 0); // Red
             xMark.material = xMarkMat;
+
+            // Make lines thicker
+            xMark.enableEdgesRendering();
+            xMark.edgesWidth = 4.0;
+            xMark.edgesColor = new BABYLON.Color4(1, 0, 0, 1);
 
             // Store the X mark mesh
             this.markMeshes.push(xMark);

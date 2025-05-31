@@ -8,10 +8,42 @@
 </head>
 <body>
   <canvas id="renderCanvas" touch-action="none"></canvas>
+  <button id="muteBtn">Mute</button>
   </div>
   <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
   <script type="module" src="/src/index.ts"></script>
-  
+  <script>
+    let isMuted = false;
+    let muteBtn = null;
+
+    // Listen for game ready event
+    window.addEventListener('gameReady', (event) => {
+      console.log("[MuteButton] Game is ready, setting up mute button");
+      window.uiManager = event.detail.uiManager;
+      setupMuteButton();
+    });
+
+    function setupMuteButton() {
+      muteBtn = document.getElementById('muteBtn');
+      if (muteBtn && window.uiManager) {
+        console.log("[MuteButton] Setting up mute button with uiManager");
+        muteBtn.onclick = function() {
+          console.log("[MuteButton] Button clicked, current mute state:", isMuted);
+          isMuted = !isMuted;
+          console.log("[MuteButton] New mute state:", isMuted);
+          window.uiManager.setMuted(isMuted);
+          this.textContent = isMuted ? 'Unmute' : 'Mute';
+        };
+      } else {
+        console.log("[MuteButton] Waiting for uiManager to be available");
+        // If not ready yet, try again in 100ms
+        setTimeout(setupMuteButton, 100);
+      }
+    }
+
+    // Initial setup attempt
+    setupMuteButton();
+  </script>
 </body>
 </html>
 
@@ -32,5 +64,24 @@
     font-size: 0;
     touch-action: none;
     z-index: 1;
+  }
+
+  #muteBtn {
+    position: absolute;
+    top: 20px;
+    right: 80px;
+    z-index: 10;
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 8px;
+    background: #3E92CC;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  #muteBtn:hover {
+    background: #5DADE2;
   }
 </style>

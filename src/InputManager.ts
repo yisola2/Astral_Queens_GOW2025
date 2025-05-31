@@ -20,7 +20,7 @@ export class InputManager {
     private _removeKey = 'r';
     private _resetKey = 'escape';
     private _helpKey = 'h';
-    private _markKey = 'm';  // New key for marking cells
+    private _markKey = 'space';  // Changed from 'm' to 'space'
 
     constructor(scene: BABYLON.Scene) {
         // Setup keyboard input
@@ -61,10 +61,10 @@ export class InputManager {
 
         // Update movement direction based on current inputMap state
         // Note: Changed to WASD keys for French AZERTY keyboard compatibility
-        if (this._inputMap['z'] || this._inputMap['arrowup']) this.moveDirection.z = 1;
-        if (this._inputMap['s'] || this._inputMap['arrowdown']) this.moveDirection.z = -1;
-        if (this._inputMap['q'] || this._inputMap['arrowleft']) this.moveDirection.x = -1;
-        if (this._inputMap['d'] || this._inputMap['arrowright']) this.moveDirection.x = 1;
+        if (this._inputMap['z'] ) this.moveDirection.z = 1;
+        if (this._inputMap['s'] ) this.moveDirection.z = -1;
+        if (this._inputMap['q'] ) this.moveDirection.x = -1;
+        if (this._inputMap['d'] ) this.moveDirection.x = 1;
 
         // Normalize if there's input to prevent faster diagonal movement
         if (this.moveDirection.lengthSquared() > 0) {

@@ -1,6 +1,7 @@
 import * as BABYLON from '@babylonjs/core';
 import { PhysicsAggregate, PhysicsShapeType } from '@babylonjs/core';
 import { GridManager } from './GridManager';
+import { Game } from './Game';
 
 // Interface for altar configuration
 export interface AltarConfig {
@@ -27,9 +28,12 @@ export class AltarManager {
     // Callback for altar activation
     private onAltarActivatedCallback: ((altarId: string) => void) | null = null;
     
-    constructor(scene: BABYLON.Scene, gridManager: GridManager) {
+    private game: Game;
+    
+    constructor(scene: BABYLON.Scene, gridManager: GridManager, game: Game) {
         this.scene = scene;
         this.gridManager = gridManager;
+        this.game = game;
         
         // Create materials
         this.createMaterials();
@@ -477,6 +481,9 @@ export class AltarManager {
             (glowRing as any)._originalEmissive = original;
         }
         
+        // Switch caméra pour le puzzle
+        this.game.focusOnPuzzle(config.gridPosition);
+        
         return true;
     }
     
@@ -549,6 +556,12 @@ export class AltarManager {
             mat.animations = [];
             mat.animations.push(anim);
             this.scene.beginAnimation(mat, 0, 20, false);
+        }
+
+        // Switch caméra pour l'exploration
+        const player = this.scene.getMeshByName('player');
+        if (player) {
+            this.game.focusOnPlayer(player.position);
         }
     }
     

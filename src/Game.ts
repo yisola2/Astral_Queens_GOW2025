@@ -11,10 +11,11 @@ import { AudioManager, SoundConfig } from './AudioManager';
 import "@babylonjs/loaders";
 import "@babylonjs/inspector";
 
+
 export class Game {
     private engine: BABYLON.Engine;
     private scene: BABYLON.Scene;
-    private camera: BABYLON.ArcRotateCamera;
+    private explorationCamera: BABYLON.ArcRotateCamera;
     private havokPlugin: HavokPlugin | null = null;
 
     // Components
@@ -25,6 +26,7 @@ export class Game {
     private altarManager: AltarManager;
     private uiManager: UIManager;
     private audioManager: AudioManager;
+
     
     private isLoading: boolean = true;
     private onInitializedCallback: (() => void) | null = null;
@@ -41,12 +43,27 @@ export class Game {
         console.log("Game constructor: Setting up engine, scene, camera...");
         this.engine = new BABYLON.Engine(canvas, true, { audioEngine: true }, true);
         this.scene = new BABYLON.Scene(this.engine);
-        this.camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, BABYLON.Vector3.Zero(), this.scene);
-        this.camera.attachControl(canvas, true);
-        this.camera.lowerRadiusLimit = 5;
-        this.camera.upperRadiusLimit = 30;
+        
+        // Caméra d'exploration (contrôle souris, limites d'angle)
+        this.explorationCamera = new BABYLON.ArcRotateCamera(
+            "explorationCamera",
+            -Math.PI / 2, // alpha
+            Math.PI / 2.5, // beta
+            15, // radius
+            BABYLON.Vector3.Zero(),
+            this.scene
+        );
+        this.explorationCamera.attachControl(canvas, true);
+        this.explorationCamera.lowerRadiusLimit = 5;
+        this.explorationCamera.upperRadiusLimit = 30;
+        this.explorationCamera.lowerBetaLimit = 0.1; // empêche de regarder par dessous
+        this.explorationCamera.upperBetaLimit = Math.PI / 2.2; // limite vers le haut
+        // Optionnel : limiter la rotation horizontale
+        // this.explorationCamera.lowerAlphaLimit = -Math.PI / 2;
+        // this.explorationCamera.upperAlphaLimit = Math.PI / 2;
 
-        // Store canvas for audio engine
+        // Caméra active par défaut
+        this.scene.activeCamera = this.explorationCamera;
         this.canvas = canvas;
 
         this.onInitializedCallback = onInitialized || null;
@@ -86,31 +103,27 @@ export class Game {
         
         // Create the player AFTER the environment is ready
         console.log("Creating player...");
-        this.playerController = new PlayerController(this.scene, this.camera, this.inputManager, this);
+        this.playerController = new PlayerController(this.scene, this.explorationCamera, this.inputManager, this);
         console.log("Player created.");
         
         // Create altar manager with the grid manager
-        this.altarManager = new AltarManager(this.scene, this.gridManager);
+        this.altarManager = new AltarManager(this.scene, this.gridManager, this);
         
-        // Create UI manager
-        this.uiManager = new UIManager(this.scene);
-        
-        // Create audio manager
-        this.audioManager = new AudioManager(this.scene);
+        // Create UI manager (pass audioManager)
+        this.uiManager = new UIManager(this.scene, this.audioManager);
         
         // Set up the managers in player controller
         this.playerController.setGridManager(this.gridManager);
         this.playerController.setAltarManager(this.altarManager);
         this.playerController.setUIManager(this.uiManager);
         
+
+        // this.tutorialManager.startTutorial(); // Disable tutorial for now
         // Set up game levels (altars and puzzles)
-        this.setupLevels();
+        this.setupLevels(); // Restore normal game flow
         
         // Initialize UI
         this.initializeUI();
-        
-        // Set camera to follow player
-        this.camera.setTarget(this.playerController.mesh.position);
         
         // Register events
         this.registerEvents();
@@ -120,6 +133,10 @@ export class Game {
         if (this.onInitializedCallback) {
             this.onInitializedCallback();
         }
+        
+        // Dispatch custom event when game is ready
+        const gameReadyEvent = new CustomEvent('gameReady', { detail: { uiManager: this.uiManager } });
+        window.dispatchEvent(gameReadyEvent);
         
         // Show welcome/tutorial message
         this.showTutorial();
@@ -290,12 +307,16 @@ export class Game {
         
         // Load all sounds
         try {
+            console.log("[Audio] Starting to load sounds...");
             await this.audioManager.loadSounds(sounds);
             console.log("[Audio] All sounds loaded successfully!");
             
             // Only start playing background music if audio is unlocked
             if (BABYLON.Engine.audioEngine?.unlocked) {
+                console.log("[Audio] Audio is unlocked, playing theme music");
                 this.audioManager.playSound('theme');
+            } else {
+                console.log("[Audio] Audio is locked, not playing theme music");
             }
         } catch (error) {
             console.error("[Audio] Error loading sounds:", error);
@@ -355,7 +376,7 @@ export class Game {
             "• Mouse: Look around\n" +
             "• E: Interact with altars / Place queen on highlighted cell\n" +
             "• R: Remove queen from highlighted cell\n" +
-            "• M: Mark/unmark highlighted cell (useful for tracking possibilities)\n\n" +
+            "• SPACE: Mark/unmark highlighted cell (useful for tracking possibilities)\n\n" +
             "Objective:\n" +
             "• Activate each altar to reveal its unique puzzle grid.\n" +
             "• Use logic (no guessing needed!) to solve the puzzle on all 5 altars.";
@@ -437,12 +458,7 @@ export class Game {
             this.inputManager.update();
             this.playerController.update(deltaTime);
             
-            // Keep camera following player
-            this.camera.setTarget(BABYLON.Vector3.Lerp(
-                this.camera.getTarget(), 
-                this.playerController.mesh.position, 
-                0.1
-            ));
+            // La FollowCamera suit automatiquement le joueur, plus besoin de code manuel
 
             // Check for puzzle completion (until we have an event system)
             this.checkPuzzleCompletion();
@@ -528,5 +544,22 @@ export class Game {
         } catch (error) {
             console.error(`[Audio] Error playing sound ${name}:`, error);
         }
+    }
+
+    public focusOnPlayer(playerPosition: BABYLON.Vector3) {
+        this.explorationCamera.setTarget(playerPosition);
+        this.explorationCamera.radius = 15;
+        this.explorationCamera.beta = Math.PI / 2.5;
+    }
+
+    public focusOnPuzzle(center: BABYLON.Vector3) {
+        this.explorationCamera.setTarget(center);
+        this.explorationCamera.radius = 12;
+        this.explorationCamera.beta = Math.PI / 3;
+    }
+
+    // Add public getter for uiManager
+    public getUIManager(): UIManager {
+        return this.uiManager;
     }
 }

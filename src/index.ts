@@ -32,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Make game and uiManager globally available
+    (window as any).game = game;
+    (window as any).uiManager = game.getUIManager();
+
     console.log('Game instance created. Initialization started...');
 
     // If you add an async method to Game like 'await game.fullyInitialized()'

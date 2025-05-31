@@ -10,6 +10,20 @@ export class Environment {
         this.scene = scene;
         this.createLights(scene);
         this.createHubMarker(scene);
+
+        // SKYBOX DREAMLAND
+        const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+        const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMaterial", scene);
+        skyboxMaterial.backFaceCulling = false;
+        skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+            "assets/envmap_miramar/miramar",
+            scene,
+            ["_rt.png", "_up.png", "_ft.png", "_lf.png", "_dn.png", "_bk.png"]
+        );
+        skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+        skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+        skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+        skybox.material = skyboxMaterial;
     }
 
     public async initialize(): Promise<void> {

@@ -29,7 +29,7 @@ Place queens on a grid following these rules:
 - **Mouse**: Look around
 - **E**: Interact with altars / Place queen
 - **R**: Remove queen
-- **M**: Mark/unmark cell for planning
+- **SPACE**: Mark/unmark cell for planning
 - **H**: Help screen
 
 ## Technologies Used
