@@ -176,6 +176,10 @@ export class UIManager {
         this.popupContainer.color = "white";
         this.popupContainer.thickness = 2;
         this.popupContainer.background = "rgba(0, 0, 0, 0.8)";
+        this.popupContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        this.popupContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.popupContainer.zIndex = 1000;
+        this.popupContainer.isVisible = true;
         this.advancedTexture.addControl(this.popupContainer);
         
         // Add popup text
@@ -244,9 +248,9 @@ export class UIManager {
         grid.zIndex = 12;
         
         // Define rows and columns
-        grid.addRowDefinition(0.1); // For title
-        grid.addRowDefinition(0.8); // For content
-        grid.addRowDefinition(0.1); // For button
+        grid.addRowDefinition(0.08); // For title (unchanged)
+        grid.addRowDefinition(0.88); // For content (increased)
+        grid.addRowDefinition(0.06); // For button (reduced)
         grid.addColumnDefinition(1);
         
         this.helpPopupContainer.addControl(grid);
@@ -268,17 +272,17 @@ export class UIManager {
         contentGrid.height = "100%";
         contentGrid.paddingLeft = "20px";
         contentGrid.paddingRight = "20px";
-        contentGrid.zIndex = 12;
+        contentGrid.zIndex = 15;
         
         // Define content grid's rows and columns
         contentGrid.addRowDefinition(1);
-        contentGrid.addColumnDefinition(0.6);
-        contentGrid.addColumnDefinition(0.4);
+        contentGrid.addColumnDefinition(0.5); // 70% for text
+        contentGrid.addColumnDefinition(0.5); // 30% for image
         
         grid.addControl(contentGrid, 1, 0);
         
-        // Create a scroll viewer for the rules content
-        const scrollViewer = new GUI.ScrollViewer("helpScrollViewer");
+        // Create a scroll viewer for the rules content (left column)
+        const scrollViewer = new GUI.ScrollViewer();
         scrollViewer.width = "100%";
         scrollViewer.height = "100%";
         scrollViewer.thickness = 0;
@@ -286,11 +290,41 @@ export class UIManager {
         scrollViewer.barColor = "#888888";
         scrollViewer.wheelPrecision = 10;
         scrollViewer.isPointerBlocker = true;
+        scrollViewer.paddingLeft = "10px";
+        scrollViewer.paddingRight = "10px";
+        scrollViewer.paddingTop = "0px";
+        scrollViewer.paddingBottom = "0px";
+
+        // Single TextBlock for all help text
+        const helpText =
+            "HOW TO PLAY\n\n" +
+            "GOAL:\n" +
+            "Place exactly one queen in each row, column, and colored region.\n\n" +
+            "RULES:\n" +
+            "1. Each row, column, and colored region must have exactly one queen.\n" +
+            "2. Queens cannot be placed in cells adjacent (horizontally, vertically, OR diagonally) to another queen. They cannot touch, even at corners.\n\n" +
+            "CONTROLS:\n" +
+            "• WASD / ZQSD: Move character\n" +
+            "• Mouse or Arrow Keys: Look around\n" +
+            "• E: Interact with altars / Place queen on highlighted cell\n" +
+            "• R: Remove queen from highlighted cell\n" +
+            "• SPACE: Mark/unmark highlighted cell (for planning)\n" +
+            "• H: Show the help screen\n";
+        const helpBlock = new GUI.TextBlock();
+        helpBlock.text = helpText;
+        helpBlock.color = "white";
+        helpBlock.fontSize = 20;
+        helpBlock.textWrapping = true;
+        helpBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+        helpBlock.lineSpacing = 4;
+        helpBlock.height = "auto";
+        helpBlock.resizeToFit = true;
+        helpBlock.paddingLeft = "10px";
+        helpBlock.paddingRight = "10px";
+        helpBlock.paddingTop = "0px";
+        helpBlock.paddingBottom = "10px";
+        scrollViewer.addControl(helpBlock);
         contentGrid.addControl(scrollViewer, 0, 0);
-        
-        // Create and add the content to the scroll viewer
-        const contentPanel = this.createHelpContent();
-        scrollViewer.addControl(contentPanel);
         
         // Add example container to the right column
         const exampleContainer = new GUI.Rectangle("exampleContainer");
@@ -307,7 +341,7 @@ export class UIManager {
         
         // Add example caption
         const exampleCaption = new GUI.TextBlock("exampleCaption");
-        exampleCaption.text = "Example: A valid queen placement for a 4x4 grid with 4 regions";
+        exampleCaption.text = "example: A valid queen placement";
         exampleCaption.color = "#CCCCCC";
         exampleCaption.fontSize = 16;
         exampleCaption.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
@@ -339,172 +373,6 @@ export class UIManager {
         
         // Hide the popup by default
         this.hideHelpPopup();
-    }
-    
-    // Create a structured help content with proper formatting
-    private createHelpContent(): GUI.StackPanel {
-        // Create a container for all the help content
-        const contentPanel = new GUI.StackPanel("helpContentPanel");
-        contentPanel.width = "100%";
-        contentPanel.spacing = 10;
-        
-        // Title
-        const titleText = new GUI.TextBlock("helpTitleText");
-        titleText.text = "HOW TO PLAY THE QUEEN PUZZLE GAME";
-        titleText.color = "#FFD700"; // Gold color for title
-        titleText.fontSize = 22;
-        titleText.fontWeight = "bold";
-        titleText.height = "35px";
-        titleText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-        contentPanel.addControl(titleText);
-        
-        // Add some spacing
-        const spacer = new GUI.Rectangle("spacer");
-        spacer.width = "100%";
-        spacer.height = "10px";
-        spacer.color = "transparent";
-        spacer.thickness = 0;
-        contentPanel.addControl(spacer);
-        
-        // 1. OBJECTIVE section
-        const objectiveTitle = new GUI.TextBlock("objectiveTitle");
-        objectiveTitle.text = "1. OBJECTIVE:";
-        objectiveTitle.color = "#4CAF50"; // Green
-        objectiveTitle.fontSize = 20;
-        objectiveTitle.fontWeight = "bold";
-        objectiveTitle.height = "30px";
-        contentPanel.addControl(objectiveTitle);
-        
-        const objectiveText = new GUI.TextBlock("objectiveText");
-        objectiveText.text = "Place queens on each colored region so that no queen threatens another queen.";
-        objectiveText.color = "white";
-        objectiveText.fontSize = 18;
-        objectiveText.textWrapping = true;
-        objectiveText.paddingLeft = "20px";
-        objectiveText.height = "40px";
-        contentPanel.addControl(objectiveText);
-        
-        // 2. QUEEN MOVEMENT RULES section
-        const rulesTitle = new GUI.TextBlock("rulesTitle");
-        rulesTitle.text = "2. QUEEN MOVEMENT RULES:";
-        rulesTitle.color = "#4CAF50";
-        rulesTitle.fontSize = 20;
-        rulesTitle.fontWeight = "bold";
-        rulesTitle.height = "30px";
-        contentPanel.addControl(rulesTitle);
-        
-        const rulesText1 = new GUI.TextBlock("rulesText1");
-        rulesText1.text = "• Queens can move horizontally, vertically, and diagonally (like in chess).";
-        rulesText1.color = "white";
-        rulesText1.fontSize = 18;
-        rulesText1.textWrapping = true;
-        rulesText1.paddingLeft = "20px";
-        rulesText1.height = "40px";
-        contentPanel.addControl(rulesText1);
-        
-        const rulesText2 = new GUI.TextBlock("rulesText2");
-        rulesText2.text = "• A queen threatens any cell that shares its row, column, or diagonal.";
-        rulesText2.color = "white";
-        rulesText2.fontSize = 18;
-        rulesText2.textWrapping = true;
-        rulesText2.paddingLeft = "20px";
-        rulesText2.height = "40px";
-        contentPanel.addControl(rulesText2);
-        
-        // 3. PUZZLE RULES section
-        const puzzleTitle = new GUI.TextBlock("puzzleTitle");
-        puzzleTitle.text = "3. PUZZLE RULES:";
-        puzzleTitle.color = "#4CAF50";
-        puzzleTitle.fontSize = 20;
-        puzzleTitle.fontWeight = "bold";
-        puzzleTitle.height = "30px";
-        contentPanel.addControl(puzzleTitle);
-        
-        const puzzleText1 = new GUI.TextBlock("puzzleText1");
-        puzzleText1.text = "• Each colored region must contain exactly one queen.";
-        puzzleText1.color = "white";
-        puzzleText1.fontSize = 18;
-        puzzleText1.textWrapping = true;
-        puzzleText1.paddingLeft = "20px";
-        puzzleText1.height = "30px";
-        contentPanel.addControl(puzzleText1);
-        
-        const puzzleText2 = new GUI.TextBlock("puzzleText2");
-        puzzleText2.text = "• No queen may threaten another queen.";
-        puzzleText2.color = "white";
-        puzzleText2.fontSize = 18;
-        puzzleText2.textWrapping = true;
-        puzzleText2.paddingLeft = "20px";
-        puzzleText2.height = "30px";
-        contentPanel.addControl(puzzleText2);
-        
-        const puzzleText3 = new GUI.TextBlock("puzzleText3");
-        puzzleText3.text = "• You must place exactly one queen in each region to solve the puzzle.";
-        puzzleText3.color = "white";
-        puzzleText3.fontSize = 18;
-        puzzleText3.textWrapping = true;
-        puzzleText3.paddingLeft = "20px";
-        puzzleText3.height = "40px";
-        contentPanel.addControl(puzzleText3);
-        
-        // 4. CONTROLS section
-        const controlsTitle = new GUI.TextBlock("controlsTitle");
-        controlsTitle.text = "4. CONTROLS:";
-        controlsTitle.color = "#4CAF50";
-        controlsTitle.fontSize = 20;
-        controlsTitle.fontWeight = "bold";
-        controlsTitle.height = "30px";
-        contentPanel.addControl(controlsTitle);
-        
-        // Create a container for controls to display them in a more compact way
-        const controlsContainer = new GUI.Grid("controlsGrid");
-        controlsContainer.addColumnDefinition(1);
-        controlsContainer.addRowDefinition(0.2);
-        controlsContainer.addRowDefinition(0.2);
-        controlsContainer.addRowDefinition(0.2);
-        controlsContainer.addRowDefinition(0.2);
-        controlsContainer.addRowDefinition(0.2);
-        controlsContainer.width = "100%";
-        controlsContainer.height = "150px";
-        controlsContainer.paddingLeft = "20px";
-        contentPanel.addControl(controlsContainer);
-        
-        const controlsText1 = new GUI.TextBlock("controlsText1");
-        controlsText1.text = "• Use WASD or arrow keys to move your character";
-        controlsText1.color = "white";
-        controlsText1.fontSize = 18;
-        controlsText1.textWrapping = true;
-        controlsContainer.addControl(controlsText1, 0, 0);
-        
-        const controlsText2 = new GUI.TextBlock("controlsText2");
-        controlsText2.text = "• Press E to interact with altars and place queens";
-        controlsText2.color = "white";
-        controlsText2.fontSize = 18;
-        controlsText2.textWrapping = true;
-        controlsContainer.addControl(controlsText2, 1, 0);
-        
-        const controlsText3 = new GUI.TextBlock("controlsText3");
-        controlsText3.text = "• Press R to remove a queen";
-        controlsText3.color = "white";
-        controlsText3.fontSize = 18;
-        controlsText3.textWrapping = true;
-        controlsContainer.addControl(controlsText3, 2, 0);
-        
-        const controlsText4 = new GUI.TextBlock("controlsText4");
-        controlsText4.text = "• Press SPACE to mark/unmark a cell for planning";
-        controlsText4.color = "white";
-        controlsText4.fontSize = 18;
-        controlsText4.textWrapping = true;
-        controlsContainer.addControl(controlsText4, 3, 0);
-        
-        const controlsText5 = new GUI.TextBlock("controlsText5");
-        controlsText5.text = "• Press H for this help screen";
-        controlsText5.color = "white";
-        controlsText5.fontSize = 18;
-        controlsText5.textWrapping = true;
-        controlsContainer.addControl(controlsText5, 4, 0);
-        
-        return contentPanel;
     }
     
     // Create a simple grid example with queens
@@ -592,10 +460,91 @@ export class UIManager {
     }
     
     // Show popup with message
-    public showPopup(title: string, message: string, buttonText: string = "Close"): void {
-        this.popupText.text = `${title}\n\n${message}`;
-        this.popupCloseButton.textBlock.text = buttonText;
+    public showPopup(title: string, message: string, buttonText: string = "Start Game"): void {
+        // Style the popup container
+        this.popupContainer.width = "600px";
+        this.popupContainer.height = "500px";
+        this.popupContainer.cornerRadius = 18;
+        this.popupContainer.color = "#FFD700";
+        this.popupContainer.thickness = 5;
+        this.popupContainer.background = "rgba(30, 30, 40, 0.97)";
+        this.popupContainer.shadowBlur = 24;
+        this.popupContainer.shadowOffsetX = 0;
+        this.popupContainer.shadowOffsetY = 8;
+        this.popupContainer.shadowColor = "#000000AA";
+        this.popupContainer.paddingTop = "20px";
+        this.popupContainer.paddingBottom = "20px";
+        this.popupContainer.paddingLeft = "30px";
+        this.popupContainer.paddingRight = "30px";
+        this.popupContainer.zIndex = 1000;
         this.popupContainer.isVisible = true;
+
+        // Remove all previous controls
+        this.popupContainer.clearControls();
+
+        // Create a single vertical stack panel that will contain everything
+        const mainPanel = new GUI.StackPanel();
+        mainPanel.width = "100%";
+        mainPanel.height = "100%";
+        mainPanel.isVertical = true;
+        mainPanel.spacing = 20;
+        this.popupContainer.addControl(mainPanel);
+
+        // Title
+        const titleBlock = new GUI.TextBlock();
+        titleBlock.text = title;
+        titleBlock.color = "#FFD700";
+        titleBlock.fontSize = 38;
+        titleBlock.fontWeight = "bold";
+        titleBlock.height = "60px";
+        titleBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        mainPanel.addControl(titleBlock);
+
+        // Message (rich text) inside a scroll viewer
+        const scrollViewer = new GUI.ScrollViewer();
+        scrollViewer.width = "100%";
+        scrollViewer.height = "300px"; // Fixed height for the scrollable area
+        scrollViewer.thickness = 0;
+        scrollViewer.barSize = 15;
+        scrollViewer.barColor = "#888888";
+        scrollViewer.wheelPrecision = 10;
+        scrollViewer.isPointerBlocker = true;
+
+        const messageBlock = new GUI.TextBlock();
+        messageBlock.text = message;
+        messageBlock.color = "white";
+        messageBlock.fontSize = 20;
+        messageBlock.textWrapping = true;
+        messageBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        messageBlock.paddingLeft = "10px";
+        messageBlock.paddingRight = "10px";
+        messageBlock.paddingTop = "10px";
+        messageBlock.paddingBottom = "10px";
+        messageBlock.resizeToFit = true;
+        scrollViewer.addControl(messageBlock);
+        mainPanel.addControl(scrollViewer);
+
+        // Start Game button
+        this.popupCloseButton = GUI.Button.CreateSimpleButton("closeButton", buttonText);
+        this.popupCloseButton.width = "220px";
+        this.popupCloseButton.height = "60px";
+        this.popupCloseButton.color = "white";
+        this.popupCloseButton.cornerRadius = 12;
+        this.popupCloseButton.background = "#4CAF50";
+        this.popupCloseButton.fontSize = 26;
+        this.popupCloseButton.fontWeight = "bold";
+        this.popupCloseButton.thickness = 0;
+        this.popupCloseButton.onPointerEnterObservable.add(() => {
+            this.popupCloseButton.background = "#43A047";
+        });
+        this.popupCloseButton.onPointerOutObservable.add(() => {
+            this.popupCloseButton.background = "#4CAF50";
+        });
+        this.popupCloseButton.onPointerClickObservable.clear();
+        this.popupCloseButton.onPointerClickObservable.add(() => {
+            this.hidePopup();
+        });
+        mainPanel.addControl(this.popupCloseButton);
     }
     
     // Hide popup
