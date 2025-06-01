@@ -377,7 +377,8 @@ export class Game {
             "• Mouse or Arrow Keys: Look around\n" +
             "• E: Interact with altars / Place queen on highlighted cell\n" +
             "• R: Remove queen from highlighted cell\n" +
-            "• SPACE: Mark/unmark highlighted cell (for planning)\n";
+            "• SPACE: Mark/unmark highlighted cell (for planning)\n"+
+            "• H: Show the help screen";
 
         this.uiManager.showTutorial(tutorialText);
     }
