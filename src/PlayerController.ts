@@ -294,6 +294,11 @@ export class PlayerController {
         if (this.inputManager.markPressed && 
             this.currentCell && 
             currentTime - this.lastMarkTime >= this.markCooldown) {
+            
+            // Toggle the mark
+            this.gridManager.toggleMark(this.currentCell);
+            this.lastMarkTime = currentTime;
+            
             // Show mark/unmark prompt
             if (this.currentCell.marked) {
                 this.showInteractionPrompt(`Press [SPACE] to unmark cell`);
