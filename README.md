@@ -9,11 +9,11 @@ A 3D puzzle game built with BabylonJS and TypeScript featuring dynamic level loa
 
 ## 📺 Demo Video
 
-**YouTube Gameplay**: [Coming Soon - Add your video link here]
+**YouTube Gameplay**: [Coming Soon ]
 
 ## 📸 Photo Gallery
 
-**Screenshots & Media**: [Coming Soon - Add your gallery link here]
+**Screenshots & Media**: [Coming Soon ]
 
 ---
 
