@@ -633,52 +633,57 @@ export class GridManager {
 
         // Update visual representation
         if (cell.marked) {
-            // Create X mark with thicker lines
-            const xMark = BABYLON.MeshBuilder.CreateLines(
-                `xMark_${cell.row}_${cell.col}`,
+            // Create two lines for a proper X
+            const xMark1 = BABYLON.MeshBuilder.CreateLines(
+                `xMark1_${cell.row}_${cell.col}`,
                 {
                     points: [
-                        new BABYLON.Vector3(-0.3, 0.01, -0.3),  // Reduced y offset
-                        new BABYLON.Vector3(0.3, 0.01, 0.3),
-                        new BABYLON.Vector3(0.3, 0.01, -0.3),
-                        new BABYLON.Vector3(-0.3, 0.01, 0.3)
-                    ],
-                    updatable: false,
-                    instance: null
+                        new BABYLON.Vector3(-0.3, 0.01, -0.3),
+                        new BABYLON.Vector3(0.3, 0.01, 0.3)
+                    ]
                 },
                 this.scene
             );
-
-            // Position and parent the X mark
-            xMark.position = cell.mesh.position.clone();
-            xMark.position.y += this.cellHeight / 2 + 0.01; // Reduced offset to be closer to cell
-            xMark.parent = this.gridRoot;
-
-            // Create material for X mark with thicker lines
-            const xMarkMat = new BABYLON.StandardMaterial(`xMark_${cell.row}_${cell.col}_mat`, this.scene);
-            xMarkMat.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red
-            xMarkMat.emissiveColor = new BABYLON.Color3(1, 0, 0); // Red
-            xMark.material = xMarkMat;
-
-            // Make lines thicker
-            xMark.enableEdgesRendering();
-            xMark.edgesWidth = 4.0;
-            xMark.edgesColor = new BABYLON.Color4(1, 0, 0, 1);
-
-            // Store the X mark mesh
-            this.markMeshes.push(xMark);
+            const xMark2 = BABYLON.MeshBuilder.CreateLines(
+                `xMark2_${cell.row}_${cell.col}`,
+                {
+                    points: [
+                        new BABYLON.Vector3(-0.3, 0.01, 0.3),
+                        new BABYLON.Vector3(0.3, 0.01, -0.3)
+                    ]
+                },
+                this.scene
+            );
+            [xMark1, xMark2].forEach(xMark => {
+                xMark.position = cell.mesh.position.clone();
+                xMark.position.y += this.cellHeight / 2 + 0.01;
+                xMark.parent = this.gridRoot;
+                const xMarkMat = new BABYLON.StandardMaterial(`xMarkMat_${cell.row}_${cell.col}`, this.scene);
+                xMarkMat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+                xMarkMat.emissiveColor = new BABYLON.Color3(1, 0, 0);
+                xMark.material = xMarkMat;
+                xMark.enableEdgesRendering();
+                xMark.edgesWidth = 4.0;
+                xMark.edgesColor = new BABYLON.Color4(1, 0, 0, 1);
+                this.markMeshes.push(xMark);
+            });
         } else {
-            // Remove X mark if it exists
-            const xMarkName = `xMark_${cell.row}_${cell.col}`;
-            const xMark = this.scene.getMeshByName(xMarkName);
-            if (xMark) {
-                xMark.dispose();
-                // Remove from markMeshes array
-                const index = this.markMeshes.findIndex(m => m.name === xMarkName);
-                if (index !== -1) {
-                    this.markMeshes.splice(index, 1);
+            // Remove both X mark lines if they exist
+            const xMarkNames = [
+                `xMark1_${cell.row}_${cell.col}`,
+                `xMark2_${cell.row}_${cell.col}`
+            ];
+            xMarkNames.forEach(xMarkName => {
+                const xMark = this.scene.getMeshByName(xMarkName);
+                if (xMark) {
+                    xMark.dispose();
+                    // Remove from markMeshes array
+                    const index = this.markMeshes.findIndex(m => m.name === xMarkName);
+                    if (index !== -1) {
+                        this.markMeshes.splice(index, 1);
+                    }
                 }
-            }
+            });
         }
     }
     
