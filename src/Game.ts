@@ -367,23 +367,19 @@ export class Game {
     private showTutorial(): void {
         const tutorialText =
             "Welcome to Astral Queens!\n\n" +
-            "Goal: Place exactly one queen in each row, column, and colored region.\n\n" +
-            "Rules:\n" +
+            "GOAL:\n" +
+            "Place exactly one queen in each row, column, and colored region.\n\n" +
+            "RULES:\n" +
             "1. Row/Column/Region: Each row, column, and colored region must have exactly one queen.\n" +
-            "2. No Touching: Queens cannot be placed in cells adjacent (horizontally, vertically, OR diagonally) to another queen. They cannot touch, even at corners.\n\n" + // Clarified adjacency rule
-            "Controls:\n" +
-            "• WASD or Arrow Keys: Move character\n" +
-            "• Mouse: Look around\n" +
+            "2. No Touching: Queens cannot be placed in cells adjacent (horizontally, vertically, OR diagonally) to another queen. They cannot touch, even at corners.\n\n" +
+            "CONTROLS:\n" +
+            "• WASD / ZQSD: Move character\n" +
+            "• Mouse or Arrow Keys: Look around\n" +
             "• E: Interact with altars / Place queen on highlighted cell\n" +
             "• R: Remove queen from highlighted cell\n" +
-            "• SPACE: Mark/unmark highlighted cell (useful for tracking possibilities)\n\n" +
-            "Objective:\n" +
-            "• Activate each altar to reveal its unique puzzle grid.\n" +
-            "• Use logic (no guessing needed!) to solve the puzzle on all 5 altars.";
-    
-        // Replace console.log with your actual UIManager call to display this text
-        //console.log("Showing Tutorial:\n" + tutorialText);
-        this.uiManager.showTutorial(tutorialText); // Example call
+            "• SPACE: Mark/unmark highlighted cell (for planning)\n";
+
+        this.uiManager.showTutorial(tutorialText);
     }
 
     // Set up the game levels (altars and their associated puzzles)
