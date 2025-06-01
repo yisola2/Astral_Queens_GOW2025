@@ -50,7 +50,6 @@ export class GridManager {
         this.gridRoot.position = new BABYLON.Vector3(0, 0, 0);
         
         this.createMaterials();
-        this.initializeDefaultRegions();
     }
     
     private createMaterials(): void {
@@ -77,36 +76,6 @@ export class GridManager {
         this.markedMaterial.alpha = 0.7;
     }
     
-    // Define default regions for the grid - for MVP we'll use a simple pattern
-    private initializeDefaultRegions(): void {
-        // Create some sample regions with different colors
-        const regionColors = [
-            new BABYLON.Color3(0.2, 0.2, 0.2), // Blackz
-            new BABYLON.Color3(0.8, 0.2, 0.2), // Red
-            new BABYLON.Color3(0.8, 0.5, 0.2), // Orange
-            new BABYLON.Color3(0.2, 0.2, 0.8), // Blue
-            new BABYLON.Color3(0.8, 0.8, 0.2), // Yellow
-            new BABYLON.Color3(0.8, 0.2, 0.8), // Purple
-            new BABYLON.Color3(0.2, 0.8, 0.8), // Cyan
-            new BABYLON.Color3(0.6, 0.4, 0.2)  // Brown
-        ];
-
-        const maxRegionId = 8; // Adjust this based on your needs
-        
-
-        // For MVP, assign regions using a simple pattern
-        // (In a real game, you'd load this from a level definition)
-        for (let i = 0; i < maxRegionId; i++) {
-            const region: GridRegion = {
-                id: i,
-                color: regionColors[i % regionColors.length],
-                cells: []
-            };
-            this.regions.push(region);
-        }
-    }
-    
-    
     // Create and materialize the grid in the world
     public createGrid(position: BABYLON.Vector3, gridSize: number, regionLayout: number[][], platformMeshName?: string): void {
         console.log('[GridManager] createGrid called', { position, gridSize, regionLayout, platformMeshName });
@@ -115,7 +84,45 @@ export class GridManager {
         
         // Set the new grid size
         this.gridSize = gridSize;
-        
+
+        // Dynamically build regions based on regionLayout
+        // 1. Find all unique region IDs
+        const regionIdSet = new Set<number>();
+        for (let row = 0; row < regionLayout.length; row++) {
+            for (let col = 0; col < regionLayout[row].length; col++) {
+                regionIdSet.add(regionLayout[row][col]);
+            }
+        }
+        const regionIds = Array.from(regionIdSet).sort((a, b) => a - b);
+        // 2. Assign colors to each region
+        const regionColors = [
+            new BABYLON.Color3(0.2, 0.2, 0.2),   // Black
+            new BABYLON.Color3(0.8, 0.2, 0.2),   // Red
+            new BABYLON.Color3(0.8, 0.5, 0.2),   // Orange
+            new BABYLON.Color3(0.2, 0.2, 0.8),   // Blue
+            new BABYLON.Color3(0.8, 0.8, 0.2),   // Yellow
+            new BABYLON.Color3(0.8, 0.2, 0.8),   // Purple
+            new BABYLON.Color3(0.2, 0.8, 0.8),   // Cyan
+            new BABYLON.Color3(0.6, 0.4, 0.2),   // Brown
+            new BABYLON.Color3(0.9, 0.9, 0.3),   // Light yellow
+            new BABYLON.Color3(0.3, 0.9, 0.3),   // Light green
+            new BABYLON.Color3(0.3, 0.3, 0.9),   // Light blue
+            new BABYLON.Color3(1.0, 0.5, 0.0),   // Bright orange
+            new BABYLON.Color3(0.0, 0.7, 0.3),   // Green
+            new BABYLON.Color3(0.7, 0.0, 0.7),   // Magenta
+            new BABYLON.Color3(0.0, 0.7, 0.7),   // Teal
+            new BABYLON.Color3(0.7, 0.7, 0.0),   // Olive
+            new BABYLON.Color3(0.5, 0.0, 0.0),   // Dark red
+            new BABYLON.Color3(0.0, 0.5, 0.0),   // Dark green
+            new BABYLON.Color3(0.0, 0.0, 0.5),   // Dark blue
+            new BABYLON.Color3(0.5, 0.5, 0.5),   // Gray
+        ];
+        this.regions = regionIds.map((id, idx) => ({
+            id,
+            color: regionColors[idx % regionColors.length],
+            cells: []
+        }));
+
         // Optionally parent to a platform mesh
         if (platformMeshName) {
             const platformMesh = this.scene.getMeshByName(platformMeshName);
@@ -142,8 +149,12 @@ export class GridManager {
             this.cells[row] = [];
             for (let col = 0; col < gridSize; col++) {
                 const regionId = regionLayout[row][col];
-                const cell = this.createCell(row, col, regionId, offset);
+                // Find the region index in this.regions
+                const regionIdx = regionIds.indexOf(regionId);
+                const cell = this.createCell(row, col, regionIdx, offset);
                 this.cells[row][col] = cell;
+                // Add cell to region's cells array
+                this.regions[regionIdx].cells.push(cell);
             }
         }
         
