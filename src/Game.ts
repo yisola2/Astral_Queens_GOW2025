@@ -138,11 +138,6 @@ export class Game {
         const gameReadyEvent = new CustomEvent('gameReady', { detail: { uiManager: this.uiManager } });
         window.dispatchEvent(gameReadyEvent);
         
-        // Make clearProgress globally accessible for debugging
-        (window as any).clearProgress = () => {
-            this.altarManager.clearProgress();
-            this.uiManager.showSuccess("Progress cleared! All levels reset.", 3000);
-        };
         
         // Show welcome/tutorial message
         this.showTutorial();
