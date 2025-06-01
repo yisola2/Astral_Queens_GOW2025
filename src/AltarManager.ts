@@ -2,6 +2,7 @@ import * as BABYLON from '@babylonjs/core';
 import { PhysicsAggregate, PhysicsShapeType } from '@babylonjs/core';
 import { GridManager } from './GridManager';
 import { Game } from './Game';
+import * as GUI from '@babylonjs/gui';
 
 // Interface for altar configuration
 export interface AltarConfig {
@@ -229,41 +230,32 @@ export class AltarManager {
     
     // Create a text label for the altar
     private createAltarLabel(id: string, altar: BABYLON.Mesh): void {
-        // Create a plane to hold the text
         const plane = BABYLON.MeshBuilder.CreatePlane(
             `label_${id}`,
-            { width: 1, height: 0.3 },
+            { width: 3, height: 1 },
             this.scene
         );
-
-        // Position the plane above the altar
         plane.parent = altar;
-        plane.position = new BABYLON.Vector3(0, 1.5, 0);
+        plane.position = new BABYLON.Vector3(0, 2.2, 0);
         plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-
-        // Create dynamic texture for the text
         const texture = new BABYLON.DynamicTexture(
             `labelTexture_${id}`,
-            { width: 256, height: 64 },
+            { width: 1024, height: 256 },
             this.scene,
             true
         );
-        const textContext = texture.getContext();
-
-        // Create material for the plane
         const material = new BABYLON.StandardMaterial(`labelMaterial_${id}`, this.scene);
         material.diffuseTexture = texture;
         material.specularColor = BABYLON.Color3.Black();
         material.emissiveColor = BABYLON.Color3.White();
         material.backFaceCulling = false;
         plane.material = material;
-
-        // Draw the text
+        const labelText = id.replace('altar_', 'Altar ');
         texture.drawText(
-            id.replace('altar_', 'Altar '),
+            labelText,
             null,
-            50,
-            "bold 40px Arial",
+            180,
+            "bold 120px Arial",
             "white",
             "transparent",
             true
