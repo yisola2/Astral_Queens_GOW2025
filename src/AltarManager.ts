@@ -21,6 +21,11 @@ export class AltarManager {
     private gridManager: GridManager;
     private interactionDistance: number = 3; // How close player needs to be to interact
     
+    // Level management
+    private allLevels: any[] = [];
+    private solvedLevelIds: string[] = [];
+    private currentLevelIndex: number = 0;
+    
     // Materials
     private defaultMaterial: BABYLON.StandardMaterial;
     private activeMaterial: BABYLON.StandardMaterial;
@@ -30,14 +35,27 @@ export class AltarManager {
     private onAltarActivatedCallback: ((altarId: string) => void) | null = null;
     
     private game: Game;
+    private isInitialized: boolean = false;
     
     constructor(scene: BABYLON.Scene, gridManager: GridManager, game: Game) {
         this.scene = scene;
         this.gridManager = gridManager;
         this.game = game;
         
+        // Load saved progress
+        const saved = localStorage.getItem('solvedLevelIds');
+        if (saved) {
+            this.solvedLevelIds = JSON.parse(saved);
+        }
+        
         // Create materials
         this.createMaterials();
+        
+        // Load levels from JSON and mark as initialized when done
+        this.loadLevels().then(() => {
+            this.isInitialized = true;
+            console.log('AltarManager fully initialized');
+        });
     }
     
     private createMaterials(): void {
@@ -57,6 +75,52 @@ export class AltarManager {
         this.solvedMaterial.diffuseColor = new BABYLON.Color3(0.9, 0.8, 0.2); // Golden
         this.solvedMaterial.specularColor = new BABYLON.Color3(0.5, 0.5, 0.3);
         this.solvedMaterial.emissiveColor = new BABYLON.Color3(0.4, 0.3, 0.1); // Stronger glow
+    }
+    
+    private async loadLevels(): Promise<void> {
+        try {
+            const response = await fetch('levels/levels.json');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            this.allLevels = await response.json();
+            console.log(`Loaded ${this.allLevels.length} levels from JSON`);
+            console.log('First few level IDs:', this.allLevels.slice(0, 5).map(l => l.id));
+            console.log('Currently solved level IDs:', this.solvedLevelIds);
+        } catch (error) {
+            console.error('Failed to load levels from JSON:', error);
+            // Fallback to empty array or hardcoded levels if needed
+            this.allLevels = [];
+        }
+    }
+
+    private pickRandomUnsolvedLevel(): any | null {
+        console.log(`pickRandomUnsolvedLevel called. Total levels: ${this.allLevels.length}, Solved: ${this.solvedLevelIds.length}`);
+        
+        const unsolvedLevels = this.allLevels.filter(level => 
+            this.solvedLevelIds.indexOf(level.id) === -1
+        );
+        
+        console.log(`Unsolved levels found: ${unsolvedLevels.length}`);
+        
+        if (unsolvedLevels.length === 0) {
+            console.log('All levels completed!');
+            console.log('Solved level IDs:', this.solvedLevelIds);
+            return null;
+        }
+        
+        const randomIndex = Math.floor(Math.random() * unsolvedLevels.length);
+        const selectedLevel = unsolvedLevels[randomIndex];
+        console.log(`Selected random level: ${selectedLevel.id}`);
+        return selectedLevel;
+    }
+
+    private markLevelSolved(levelId: string): void {
+        if (this.solvedLevelIds.indexOf(levelId) === -1) {
+            this.solvedLevelIds.push(levelId);
+            // Save progress
+            localStorage.setItem('solvedLevelIds', JSON.stringify(this.solvedLevelIds));
+        }
     }
     
     // Create an altar with the given configuration
@@ -280,132 +344,74 @@ export class AltarManager {
         
         return closestAltarId;
     }
-    // In AltarManager.ts or Game.ts
-    private puzzleConfigurations = [
-        {
-        id: "altar_1",
-        gridSize: 7,
-        // The region layout - each number represents a region ID
-        regions: [
-            [0, 0, 0, 1, 1, 1, 1],
-            [2, 2, 0, 1, 1, 1, 1],
-            [2, 2, 0, 0, 3, 3, 3],
-            [2, 3, 3, 3, 4, 4, 3],
-            [2, 3, 5, 5, 3, 3, 3],
-            [2, 5, 5, 5, 6, 3, 3],
-            [2, 5, 5, 5, 6, 6, 6]
-        ]
-        },
-        {
-        id: "altar_2",
-        gridSize: 5,
-        regions: [
-            [0, 0, 2, 2, 2],
-            [0, 0, 2, 2, 2],
-            [3, 1, 1, 6, 6],
-            [3, 1, 1, 6, 6],
-            [3, 3, 1, 1, 6]
-        ]
-        },
-        {
-        id: "altar_3",
-        gridSize: 8,
-        regions: [
-            [0, 0, 0, 0, 5, 5, 5, 5],
-            [0, 1, 1, 0, 5, 6, 6, 5],
-            [0, 0, 1, 1, 6, 6, 7, 5],
-            [0, 0, 0, 2, 6, 7, 7, 5],
-            [0, 0, 3, 3, 3, 3, 7, 5],
-            [0, 0, 3, 4, 4, 3, 7, 5],
-            [7, 7, 3, 3, 3, 3, 7, 5],
-            [7, 7, 7, 7, 7, 7, 7, 5]
-        ]
-        },
-        {
-        id: "altar_4",
-        gridSize: 7,
-        regions: [
-            [0, 0, 0, 0, 2, 2, 2],
-            [0, 1, 0, 2, 2, 2, 2],
-            [0, 1, 2, 2, 3, 3, 2],
-            [2, 2, 2, 4, 4, 3, 2],
-            [2, 5, 5, 4, 4, 4, 4],
-            [2, 5, 5, 6, 4, 4, 4],
-            [5, 5, 6, 6, 4, 4, 4]
-        ]
-        },
-        {
-        id: "altar_5",
-        gridSize: 5,
-        regions: [
-            [0, 0, 0, 2, 2],
-            [0, 0, 2, 2, 2],
-            [3, 1, 1, 6, 6],
-            [3, 1, 1, 6, 6],
-            [3, 3, 1, 1, 6]
-        ]
-        },
-        {
-        id: "altar_6",
-        gridSize: 6,
-        regions: [
-            [0, 0, 1, 1, 1, 1],
-            [0, 0, 1, 2, 2, 1],
-            [3, 3, 1, 2, 2, 1],
-            [3, 4, 4, 4, 1, 1],
-            [3, 4, 5, 5, 5, 7],
-            [3, 3, 5, 6, 6, 7]
-        ]
-        }
-  
-        // More puzzle configurations...
-    ];
     
     // Activate an altar (show the grid)
-    // In AltarManager.ts
     public activateAltar(id: string): boolean {
-        // Make sure the altar exists
         if (!this.altars.has(id)) {
             console.error(`Altar ${id} does not exist`);
             return false;
         }
         
-        // Deactivate any currently active altar
         if (this.activeAltarId) {
             this.deactivateAltar();
         }
         
-        // Get the altar and its config
         const altar = this.altars.get(id)!;
         const config = this.altarConfigs.get(id)!;
         
-        // Skip if already solved
         if (config.solved) {
             console.log(`Altar ${id} is already solved`);
             return false;
         }
 
-        // Special handling for altar_5 (dark level)
+        // Check if levels are loaded
+        if (this.allLevels.length === 0) {
+            console.log('Levels not loaded yet, waiting...');
+            // Try to reload levels and then activate
+            this.loadLevels().then(() => {
+                this.activateAltar(id);
+            });
+            return false;
+        }
+
+        // Pick a random unsolved level instead of using hardcoded puzzle configs
+        const selectedLevel = this.pickRandomUnsolvedLevel();
+        if (!selectedLevel) {
+            console.log('No more levels available');
+            return false;
+        }
+
+        console.log(`Selected level: ${selectedLevel.id} for altar ${id}`);
+
         if (id === 'altar_5') {
+            // Turn off all lights except playerLight
             this.scene.lights.forEach(light => {
-                if (light instanceof BABYLON.HemisphericLight) {
-                    light.intensity = 0.0001; // Dim the ambient light
+                if (light.name !== 'playerLight') {
+                    light.intensity = 0;
                 }
             });
-            
-            // Create a point light attached to the player if it doesn't exist
+
+            // Remove environment texture/skybox
+            this.scene.environmentTexture = null;
+
+            // Make altar 5 almost black
+            if (altar.material && altar.material instanceof BABYLON.StandardMaterial) {
+                altar.material.diffuseColor = new BABYLON.Color3(0.01, 0.01, 0.02);
+                altar.material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+                altar.material.specularColor = new BABYLON.Color3(0, 0, 0);
+            }
+
             if (!this.scene.getLightByName('playerLight')) {
                 const playerLight = new BABYLON.PointLight(
                     'playerLight',
                     new BABYLON.Vector3(0, 2, 0),
                     this.scene
                 );
-                playerLight.intensity = 0.99;
-                playerLight.range = 5;
+                playerLight.intensity = 4.0;
+                playerLight.range = 4;
                 playerLight.diffuse = new BABYLON.Color3(0.7, 0.7, 1.0);
                 playerLight.specular = new BABYLON.Color3(0.3, 0.3, 0.6);
-                
-                // Find the player mesh and parent the light to it
+
                 const player = this.scene.getMeshByName('player');
                 if (player) {
                     playerLight.parent = player;
@@ -413,43 +419,32 @@ export class AltarManager {
             }
         }
         
-        // Highlight the altar
         altar.material = this.activeMaterial.clone(`altar_${id}_activeMat`);
         
-        // Create and show the grid with this altar's specific configuration
-        const puzzleConfig = this.puzzleConfigurations.find(config => config.id === id);
-        if (!puzzleConfig) {
-            console.error(`No puzzle configuration found for altar ${id}`);
-            return false;
-        }
-
-        // Map altar index to platform mesh name (altar_1 -> IslandPlatform_1, etc.)
+        // Use the selected level data instead of hardcoded puzzle config
         const altarIndex = parseInt(id.replace('altar_', ''));
         const platformMeshName = `IslandPlatform_${altarIndex}`;
 
         this.gridManager.createGrid(
             config.gridPosition,
-            puzzleConfig.gridSize,
-            puzzleConfig.regions,
+            selectedLevel.gridSize,
+            selectedLevel.regions,
             platformMeshName
         );
         this.gridManager.setVisible(true);
         
-        // Store the active altar
         this.activeAltarId = id;
         
-        // Trigger the callback
+        // Store the current level ID for when it's solved
+        (altar as any)._currentLevelId = selectedLevel.id;
+        
         if (this.onAltarActivatedCallback) {
             this.onAltarActivatedCallback(id);
         }
         
-        // Find the GlowRing child mesh
         const glowRing = altar.getChildMeshes().find(m => m.name.includes('GlowRing'));
-
         if (glowRing && glowRing.material) {
             const mat = glowRing.material as BABYLON.PBRMaterial;
-
-            // Animate the emissiveColor to double its brightness
             const anim = new BABYLON.Animation(
                 `glowPulse_${id}`,
                 "emissiveColor",
@@ -457,31 +452,24 @@ export class AltarManager {
                 BABYLON.Animation.ANIMATIONTYPE_COLOR3,
                 BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
             );
-
             const original = mat.emissiveColor.clone();
             const keys = [
                 { frame: 0, value: original },
                 { frame: 20, value: original.scale(2) }
             ];
-
             anim.setKeys(keys);
-
             mat.animations = [];
             mat.animations.push(anim);
             this.scene.beginAnimation(mat, 0, 20, false);
-            // Store the original color for reset
             (glowRing as any)._originalEmissive = original;
         }
         
-        // Switch caméra pour le puzzle
         this.game.focusOnPuzzle(config.gridPosition);
         
         return true;
     }
     
     // Deactivate the current altar (hide the grid)
-    // Update the deactivateAltar method in AltarManager.ts
-
     public deactivateAltar(): void {
         if (!this.activeAltarId) return;
         
@@ -644,15 +632,27 @@ export class AltarManager {
     public onPuzzleSolved(): void {
         if (!this.activeAltarId) return;
         
-        // Mark the altar as solved
-        this.markAltarSolved(this.activeAltarId);
+        const altar = this.altars.get(this.activeAltarId)!;
+        const currentLevelId = (altar as any)._currentLevelId;
         
-        // Deactivate it (hides the grid)
+        if (currentLevelId) {
+            this.markLevelSolved(currentLevelId);
+            console.log(`Level ${currentLevelId} marked as solved`);
+        }
+        
+        this.markAltarSolved(this.activeAltarId);
         this.deactivateAltar();
     }
     
     // Set callback for altar activation
     public setOnAltarActivatedCallback(callback: (altarId: string) => void): void {
         this.onAltarActivatedCallback = callback;
+    }
+    
+    // Method to clear all progress (useful for debugging)
+    public clearProgress(): void {
+        this.solvedLevelIds = [];
+        localStorage.removeItem('solvedLevelIds');
+        console.log('Progress cleared!');
     }
 }
