@@ -9,11 +9,13 @@ A 3D puzzle game built with BabylonJS and TypeScript featuring dynamic level loa
 
 ## 📺 Demo Video
 
-**YouTube Gameplay**: [Coming Soon ]
+**YouTube Gameplay**: [Check it here] (https://youtu.be/wt8TXjbOlls)
+
+**Dark Level**: [Check it here] (https://youtu.be/El8_Y1qvPKc)
 
 ## 📸 Photo Gallery
 
-**Screenshots & Media**: [Coming Soon ]
+**Screenshots & Media**: [Check it here] (https://www.dropbox.com/scl/fo/wp60ms9t8t0xd7fwtrx51/AFEUYe_Ihj9EDnMXFBsFjes?rlkey=mxw6t7ejjtkin63j5uz1lhmo7&st=olawqomv&dl=0)
 
 ---
 
@@ -191,8 +193,8 @@ I implemented a dual-mode camera system:
   - Focused overhead view for optimal puzzle solving
   - Automatic transitions between exploration and puzzle focus
   - Camera interpolation for smooth mode switching
-
-### Altar 5: The Darkness Challenge
+  
+### Altar 5: The Darkness Challenge [Check it here] (https://youtu.be/El8_Y1qvPKc)
 
 I created a special level that transforms the gameplay experience:
 
